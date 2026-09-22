@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { Receipt, User, Clock, ArrowRight, Trash2 } from 'lucide-react'
+import { Receipt, User, Clock, ArrowRight, Trash2, Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/components/ui/ToastProvider'
 import { formatCurrency, formatOrderNumber, formatDateTime } from '@/lib/utils'
@@ -57,6 +57,17 @@ export default function AdminOrdersPage() {
     }
     return () => { if (channel) supabase.removeChannel(channel) }
   }, [supabase, loadOrders])
+
+  const handleQuickAccept = async (orderId: string, orderNum: number) => {
+    try {
+      const { error } = await supabase.from('orders').update({ status: 'accepted' }).eq('id', orderId)
+      if (error) throw error
+      success(`Order #${formatOrderNumber(orderNum)} accepted!`)
+      loadOrders()
+    } catch (err: any) {
+      showError(err.message ?? 'Failed to accept order')
+    }
+  }
 
   const handleDeleteOrder = async () => {
     if (!deleteDialog.order) return
@@ -184,6 +195,17 @@ export default function AdminOrdersPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-xs">
+                  {order.status === 'pending' && (
+                    <button
+                      className="btn btn-success btn-sm"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px' }}
+                      title="Quick accept order"
+                      onClick={() => handleQuickAccept(order.id, order.order_number)}
+                    >
+                      <Check size={13} />
+                      <span>Accept</span>
+                    </button>
+                  )}
                   <Link
                     href={`/admin/orders/${order.id}`}
                     className="btn btn-secondary btn-sm"
@@ -195,7 +217,7 @@ export default function AdminOrdersPage() {
                   <button
                     className="btn btn-ghost btn-sm"
                     style={{ color: 'var(--danger)', padding: '4px 8px', display: 'inline-flex', alignItems: 'center' }}
-                    title="Delete order"
+                    title="Delete order permanently"
                     onClick={() => setDeleteDialog({ open: true, order })}
                   >
                     <Trash2 size={14} />

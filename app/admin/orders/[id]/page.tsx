@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import {
   ArrowLeft,
   Check,
@@ -26,8 +26,10 @@ const PAYMENT_OPTIONS = [
   { value: 'other', label: 'Other' },
 ]
 
-export default function OrderDetailPage({ params }: { params: { id: string } }) {
+export default function OrderDetailPage() {
   const router   = useRouter()
+  const routeParams = useParams()
+  const orderId  = (routeParams?.id as string) || ''
   const supabase = createClient()
   const { success, error: showError } = useToast()
 
@@ -41,29 +43,44 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   const [deleteOrderDialog, setDeleteOrderDialog] = useState(false)
 
   const loadOrder = useCallback(async () => {
+    if (!orderId) {
+      setLoading(false)
+      return
+    }
     try {
-      const { data } = await supabase
+      let { data, error } = await supabase
         .from('orders')
         .select(`
           *,
           profiles(name, username),
           order_items(*, products(name, image_url))
         `)
-        .eq('id', params.id)
+        .eq('id', orderId)
         .single()
 
-      setOrder(data)
+      if (error || !data) {
+        // Fallback in case nested joins fail due to missing schema relations
+        const fallback = await supabase
+          .from('orders')
+          .select('*, order_items(*)')
+          .eq('id', orderId)
+          .single()
+        data = fallback.data
+      }
+
+      setOrder(data ?? null)
       if (data?.payment_method) setPaymentMethod(data.payment_method)
     } catch {
       setOrder(null)
     } finally {
       setLoading(false)
     }
-  }, [supabase, params.id])
+  }, [supabase, orderId])
 
   useEffect(() => { loadOrder() }, [loadOrder])
 
   const updateStatus = async (newStatus: string) => {
+    if (!orderId) return
     setActionLoading(true)
     try {
       const updates: any = { status: newStatus }
@@ -75,7 +92,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
       const { error } = await supabase
         .from('orders')
         .update(updates)
-        .eq('id', params.id)
+        .eq('id', orderId)
 
       if (error) throw error
 
@@ -90,10 +107,11 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   }
 
   const handleDeleteOrder = async () => {
+    if (!orderId) return
     setActionLoading(true)
     try {
-      await supabase.from('order_items').delete().eq('order_id', params.id)
-      const { error } = await supabase.from('orders').delete().eq('id', params.id)
+      await supabase.from('order_items').delete().eq('order_id', orderId)
+      const { error } = await supabase.from('orders').delete().eq('id', orderId)
       if (error) throw error
       success(`Order ${formatOrderNumber(order?.order_number ?? 0)} deleted successfully`)
       router.push('/admin/orders')
