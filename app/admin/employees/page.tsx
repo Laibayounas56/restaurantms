@@ -103,10 +103,12 @@ export default function AdminEmployeesPage() {
         salary_amount: parseFloat(empForm.salary_amount) || 0,
       }
       if (editEmp) {
-        await supabase.from('employees').update(payload).eq('id', editEmp.id)
+        const { error } = await supabase.from('employees').update(payload).eq('id', editEmp.id)
+        if (error) throw error
         success('Employee updated')
       } else {
-        await supabase.from('employees').insert(payload)
+        const { error } = await supabase.from('employees').insert(payload)
+        if (error) throw error
         success('Employee added')
       }
       setEmpModal(false)
@@ -120,7 +122,7 @@ export default function AdminEmployeesPage() {
     if (!shiftForm.employee_id) { showError('Employee is required'); return }
     setSaving(true)
     try {
-      await supabase.from('shifts').insert({
+      const { error } = await supabase.from('shifts').insert({
         employee_id: shiftForm.employee_id,
         date:        shiftForm.date,
         start_time:  shiftForm.start_time,
@@ -128,6 +130,7 @@ export default function AdminEmployeesPage() {
         status:      shiftForm.status as any,
         notes:       shiftForm.notes || null,
       })
+      if (error) throw error
       success('Shift created')
       setShiftModal(false)
       loadData()
@@ -140,7 +143,7 @@ export default function AdminEmployeesPage() {
     if (!salaryForm.employee_id || !salaryForm.amount) { showError('Employee and amount are required'); return }
     setSaving(true)
     try {
-      await supabase.from('salary_payments').insert({
+      const { error } = await supabase.from('salary_payments').insert({
         employee_id:  salaryForm.employee_id,
         amount:       parseFloat(salaryForm.amount),
         period_start: salaryForm.period_start,
@@ -149,6 +152,7 @@ export default function AdminEmployeesPage() {
         status:       salaryForm.status as any,
         notes:        salaryForm.notes || null,
       })
+      if (error) throw error
       success('Salary payment recorded')
       setSalaryModal(false)
       loadData()

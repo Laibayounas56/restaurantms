@@ -63,13 +63,15 @@ export default function AdminExpensesPage() {
         amount:      parseFloat(form.amount),
         date:        form.date,
         description: form.description.trim() || null,
-        created_by:  user?.id,
+        created_by:  user?.id || null,
       }
       if (editExpense) {
-        await supabase.from('expenses').update(payload).eq('id', editExpense.id)
+        const { error } = await supabase.from('expenses').update(payload).eq('id', editExpense.id)
+        if (error) throw error
         success('Expense updated')
       } else {
-        await supabase.from('expenses').insert(payload)
+        const { error } = await supabase.from('expenses').insert(payload)
+        if (error) throw error
         success('Expense recorded')
       }
       setModal(false)

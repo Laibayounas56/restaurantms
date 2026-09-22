@@ -225,6 +225,8 @@ export default function NewOrderPage() {
         .select('id, order_number')
         .single()
 
+      if (orderError) throw orderError
+
       if (order) {
         const items = cart.map((c) => ({
           order_id:              order.id,
@@ -235,17 +237,13 @@ export default function NewOrderPage() {
           subtotal:              c.product.selling_price * c.quantity,
         }))
 
-        await supabase.from('order_items').insert(items)
+        const { error: itemsError } = await supabase.from('order_items').insert(items)
+        if (itemsError) throw itemsError
         success(`Order #${String(order.order_number).padStart(4, '0')} submitted!`)
-      } else {
-        // Mock order success if DB not writable
-        success(`Order for Table ${tableNumber} created successfully!`)
+        router.push('/waiter/my-orders')
       }
-
-      router.push('/waiter/my-orders')
-    } catch {
-      success(`Order for Table ${tableNumber} created successfully!`)
-      router.push('/waiter/my-orders')
+    } catch (err: any) {
+      showError(err?.message || `Failed to submit order to database`)
     } finally {
       setSubmitting(false)
     }

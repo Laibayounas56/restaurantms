@@ -91,10 +91,12 @@ export default function AdminInventoryPage() {
         supplier_name:    itemForm.supplier_name.trim() || null,
       }
       if (editItem) {
-        await supabase.from('inventory_items').update(payload).eq('id', editItem.id)
+        const { error } = await supabase.from('inventory_items').update(payload).eq('id', editItem.id)
+        if (error) throw error
         success('Item updated')
       } else {
-        await supabase.from('inventory_items').insert({ ...payload, current_quantity: 0 })
+        const { error } = await supabase.from('inventory_items').insert({ ...payload, current_quantity: 0 })
+        if (error) throw error
         success('Item added')
       }
       setItemModal(false)
