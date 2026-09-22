@@ -290,7 +290,7 @@ export default function AdminReportsPage() {
               </div>
               <div className="card">
                 <h3 style={{ marginBottom: 'var(--space-md)' }}>By Category</h3>
-                {Object.entries(data.byCategory).sort(([,a],[,b]) => (b as number)-(a as number)).map(([cat, amount]) => {
+                {Object.entries(data.byCategory || {}).sort(([,a],[,b]) => (b as number)-(a as number)).map(([cat, amount]) => {
                   const pct = data.total > 0 ? ((amount as number) / data.total) * 100 : 0
                   return (
                     <div key={cat} style={{ marginBottom: 'var(--space-sm)' }}>
