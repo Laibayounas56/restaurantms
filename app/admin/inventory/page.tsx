@@ -66,8 +66,8 @@ export default function AdminInventoryPage() {
     if (!deleteDialog.item) return
     setSaving(true)
     try {
-      // First delete associated stock movements if any exist to avoid foreign key violations
-      await supabase.from('stock_movements').delete().eq('item_id', deleteDialog.item.id)
+      // Delete associated stock movements if any exist to avoid foreign key violations
+      await supabase.from('stock_movements').delete().eq('inventory_item_id', deleteDialog.item.id)
       const { error } = await supabase.from('inventory_items').delete().eq('id', deleteDialog.item.id)
       if (error) throw error
       success(`"${deleteDialog.item.name}" deleted successfully`)
@@ -152,46 +152,119 @@ export default function AdminInventoryPage() {
 
   const handleStockIn = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!stockInForm.item_id || !stockInForm.quantity) { showError('Item and quantity are required'); return }
+    if (!stockInForm.item_id || !stockInForm.quantity) {
+      showError('Item and quantity are required')
+      return
+    }
+    const qty = parseFloat(stockInForm.quantity)
+    if (isNaN(qty) || qty <= 0) {
+      showError('Quantity must be greater than zero')
+      return
+    }
     setSaving(true)
     try {
+      // 1. Fetch current item
+      const { data: itemData, error: fetchErr } = await supabase
+        .from('inventory_items')
+        .select('id, name, current_quantity')
+        .eq('id', stockInForm.item_id)
+        .single()
+      if (fetchErr || !itemData) throw new Error('Inventory item not found')
+
+      const prevQty = Number(itemData.current_quantity) || 0
+      const newQty = prevQty + qty
+
+      // 2. Update current_quantity in inventory_items
+      const { error: updateErr } = await supabase
+        .from('inventory_items')
+        .update({ current_quantity: newQty })
+        .eq('id', stockInForm.item_id)
+      if (updateErr) throw updateErr
+
+      // 3. Record movement in stock_movements
       const { data: { user } } = await supabase.auth.getUser()
-      const { error } = await supabase.rpc('record_stock_movement', {
-        p_item_id:      stockInForm.item_id,
-        p_type:         'IN',
-        p_quantity:     parseFloat(stockInForm.quantity),
-        p_reason:       `Purchase – ${stockInForm.date}`,
-        p_notes:        stockInForm.notes || null,
-        p_performed_by: user?.id,
+      const performedBy = user?.id || 'a0000000-0000-0000-0000-000000000001'
+
+      await supabase.from('stock_movements').insert({
+        inventory_item_id: stockInForm.item_id,
+        type: 'IN',
+        quantity: qty,
+        previous_quantity: prevQty,
+        new_quantity: newQty,
+        reason: `Purchase – ${stockInForm.date}`,
+        notes: stockInForm.notes || null,
+        performed_by: performedBy,
       })
-      if (error) throw error
-      success('Stock added successfully')
-      setStockInForm(f => ({ ...f, item_id: '', quantity: '', notes: '' }))
+
+      success(`Added ${qty} to ${itemData.name} (New Stock: ${newQty})`)
+      setStockInForm(f => ({ ...f, item_id: '', quantity: '', purchase_price: '', notes: '' }))
       loadItems()
-    } catch (err: any) { showError(err.message) }
-    finally { setSaving(false) }
+      setView('stock')
+    } catch (err: any) {
+      showError(err.message ?? 'Failed to record stock in')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleStockOut = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!stockOutForm.item_id || !stockOutForm.quantity) { showError('Item and quantity are required'); return }
+    if (!stockOutForm.item_id || !stockOutForm.quantity) {
+      showError('Item and quantity are required')
+      return
+    }
+    const qty = parseFloat(stockOutForm.quantity)
+    if (isNaN(qty) || qty <= 0) {
+      showError('Quantity must be greater than zero')
+      return
+    }
     setSaving(true)
     try {
+      // 1. Fetch current item
+      const { data: itemData, error: fetchErr } = await supabase
+        .from('inventory_items')
+        .select('id, name, current_quantity')
+        .eq('id', stockOutForm.item_id)
+        .single()
+      if (fetchErr || !itemData) throw new Error('Inventory item not found')
+
+      const prevQty = Number(itemData.current_quantity) || 0
+      if (qty > prevQty) {
+        throw new Error(`Stock out quantity (${qty}) exceeds current stock (${prevQty})`)
+      }
+      const newQty = prevQty - qty
+
+      // 2. Update current_quantity in inventory_items
+      const { error: updateErr } = await supabase
+        .from('inventory_items')
+        .update({ current_quantity: newQty })
+        .eq('id', stockOutForm.item_id)
+      if (updateErr) throw updateErr
+
+      // 3. Record movement in stock_movements
       const { data: { user } } = await supabase.auth.getUser()
-      const { error } = await supabase.rpc('record_stock_movement', {
-        p_item_id:      stockOutForm.item_id,
-        p_type:         'OUT',
-        p_quantity:     parseFloat(stockOutForm.quantity),
-        p_reason:       stockOutForm.reason,
-        p_notes:        stockOutForm.notes || null,
-        p_performed_by: user?.id,
+      const performedBy = user?.id || 'a0000000-0000-0000-0000-000000000001'
+
+      await supabase.from('stock_movements').insert({
+        inventory_item_id: stockOutForm.item_id,
+        type: 'OUT',
+        quantity: qty,
+        previous_quantity: prevQty,
+        new_quantity: newQty,
+        reason: stockOutForm.reason,
+        notes: stockOutForm.notes || null,
+        performed_by: performedBy,
       })
-      if (error) throw error
-      success('Stock removed successfully')
+
+      success(`Removed ${qty} from ${itemData.name} (Remaining: ${newQty})`)
       setStockOutForm(f => ({ ...f, item_id: '', quantity: '', notes: '' }))
       loadItems()
-    } catch (err: any) { showError(err.message) }
-    finally { setSaving(false) }
+      setView('stock')
+    } catch (err: any) {
+      showError(err.message ?? 'Failed to record stock out')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const itemOptions = items.map((i) => ({ value: i.id, label: `${i.name} (${i.current_quantity} ${i.unit})` }))

@@ -57,3 +57,50 @@ ON CONFLICT (id) DO UPDATE SET
   role = EXCLUDED.role, 
   is_active = TRUE;
 
+-- 4. Function: record_stock_movement
+CREATE OR REPLACE FUNCTION record_stock_movement(
+  p_item_id      UUID,
+  p_type         stock_movement_type,
+  p_quantity     NUMERIC,
+  p_reason       TEXT DEFAULT NULL,
+  p_notes        TEXT DEFAULT NULL,
+  p_performed_by UUID DEFAULT NULL
+)
+RETURNS stock_movements AS $$
+DECLARE
+  v_item     inventory_items%ROWTYPE;
+  v_prev_qty NUMERIC;
+  v_new_qty  NUMERIC;
+  v_movement stock_movements%ROWTYPE;
+BEGIN
+  SELECT * INTO v_item FROM inventory_items WHERE id = p_item_id FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Inventory item not found';
+  END IF;
+
+  v_prev_qty := v_item.current_quantity;
+
+  IF p_type = 'IN' THEN
+    v_new_qty := v_prev_qty + p_quantity;
+  ELSE
+    IF p_quantity > v_prev_qty THEN
+      RAISE EXCEPTION 'Stock out quantity (%) exceeds current stock (%)', p_quantity, v_prev_qty;
+    END IF;
+    v_new_qty := v_prev_qty - p_quantity;
+  END IF;
+
+  UPDATE inventory_items SET current_quantity = v_new_qty WHERE id = p_item_id;
+
+  INSERT INTO stock_movements (
+    inventory_item_id, type, quantity, previous_quantity, new_quantity, reason, notes, performed_by
+  ) VALUES (
+    p_item_id, p_type, p_quantity, v_prev_qty, v_new_qty, p_reason, p_notes, p_performed_by
+  ) RETURNING * INTO v_movement;
+
+  RETURN v_movement;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION record_stock_movement TO anon, authenticated, service_role, postgres;
+
