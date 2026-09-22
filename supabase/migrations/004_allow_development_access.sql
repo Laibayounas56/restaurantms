@@ -6,15 +6,29 @@
 -- and appears in your Supabase Table Editor immediately.
 -- ============================================================
 
--- 1. Grant table & sequence privileges to anon and authenticated
-GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
+-- 1. Grant table & sequence privileges to anon, authenticated, and service_role
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role, postgres;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role, postgres;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role, postgres;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role, postgres;
 
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
+-- Explicit grants for every table to guarantee access
+GRANT ALL ON TABLE public.inventory_items    TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.employees          TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.products           TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.product_categories TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.stock_movements    TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.orders             TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.order_items        TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.expenses           TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.expense_categories TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.shifts             TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.salary_payments    TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.profiles           TO anon, authenticated, service_role, postgres;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role, postgres;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role, postgres;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role, postgres;
 
 -- 2. Disable Row Level Security (RLS) on all application tables
 -- so requests from the web app are never blocked by missing auth tokens:
