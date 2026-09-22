@@ -12,6 +12,7 @@ import {
   CreditCard,
   Banknote,
   RefreshCw,
+  Trash2,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/components/ui/ToastProvider'
@@ -37,6 +38,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean; action: 'accept' | 'complete' | 'reject' | null
   }>({ open: false, action: null })
+  const [deleteOrderDialog, setDeleteOrderDialog] = useState(false)
 
   const loadOrder = useCallback(async () => {
     try {
@@ -84,6 +86,21 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     } finally {
       setActionLoading(false)
       setConfirmDialog({ open: false, action: null })
+    }
+  }
+
+  const handleDeleteOrder = async () => {
+    setActionLoading(true)
+    try {
+      await supabase.from('order_items').delete().eq('order_id', params.id)
+      const { error } = await supabase.from('orders').delete().eq('id', params.id)
+      if (error) throw error
+      success(`Order ${formatOrderNumber(order?.order_number ?? 0)} deleted successfully`)
+      router.push('/admin/orders')
+    } catch (err: any) {
+      showError(err.message ?? 'Failed to delete order')
+      setActionLoading(false)
+      setDeleteOrderDialog(false)
     }
   }
 
@@ -316,6 +333,18 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 <div style={{ fontWeight: 600 }}>Order Cancelled</div>
               </div>
             )}
+
+            <div style={{ marginTop: 'var(--space-md)', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border)' }}>
+              <button
+                className="btn btn-ghost btn-full"
+                style={{ color: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                onClick={() => setDeleteOrderDialog(true)}
+                disabled={actionLoading}
+              >
+                <Trash2 size={15} />
+                <span>Delete Order</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -326,6 +355,16 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
         onConfirm={() => confirmDialog.action && updateStatus(confirmDialog.action === 'accept' ? 'accepted' : confirmDialog.action === 'complete' ? 'completed' : 'rejected')}
         title={confirmDialog.action ? ACTION_LABELS[confirmDialog.action] : ''}
         message="Are you sure you want to proceed with this status update?"
+        loading={actionLoading}
+      />
+
+      <ConfirmDialog
+        open={deleteOrderDialog}
+        onClose={() => setDeleteOrderDialog(false)}
+        onConfirm={handleDeleteOrder}
+        title="Delete Order Permanently"
+        message={`Are you sure you want to permanently delete order ${formatOrderNumber(order.order_number)}? All items in this order will be removed.`}
+        confirmLabel="Delete Order"
         loading={actionLoading}
       />
     </div>

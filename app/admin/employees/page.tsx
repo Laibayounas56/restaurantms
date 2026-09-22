@@ -6,7 +6,7 @@ import { useToast } from '@/components/ui/ToastProvider'
 import { Modal, ConfirmDialog } from '@/components/ui/Modal'
 import { Input, Select, Textarea } from '@/components/ui/FormFields'
 import { formatCurrency } from '@/lib/utils'
-import { UserPlus, CalendarPlus, Wallet, Users, Calendar, Pencil } from 'lucide-react'
+import { UserPlus, CalendarPlus, Wallet, Users, Calendar, Pencil, Trash2 } from 'lucide-react'
 import type { Employee, Shift, SalaryPayment } from '@/types/database'
 
 type View = 'employees' | 'shifts' | 'salaries'
@@ -53,6 +53,11 @@ export default function AdminEmployeesPage() {
   const [salaryModal, setSalaryModal] = useState(false)
   const [editEmp,     setEditEmp]     = useState<Employee | null>(null)
   const [saving,      setSaving]      = useState(false)
+
+  // Delete dialogs
+  const [deleteEmpDialog, setDeleteEmpDialog] = useState<{ open: boolean; employee: Employee | null }>({ open: false, employee: null })
+  const [deleteShiftDialog, setDeleteShiftDialog] = useState<{ open: boolean; shift: Shift | null }>({ open: false, shift: null })
+  const [deleteSalaryDialog, setDeleteSalaryDialog] = useState<{ open: boolean; salary: SalaryPayment | null }>({ open: false, salary: null })
 
   const [empForm, setEmpForm] = useState({
     name: '', phone: '', role: 'Waiter',
@@ -160,6 +165,58 @@ export default function AdminEmployeesPage() {
     finally { setSaving(false) }
   }
 
+  const handleDeleteEmployee = async () => {
+    if (!deleteEmpDialog.employee) return
+    setSaving(true)
+    try {
+      const empId = deleteEmpDialog.employee.id
+      await supabase.from('profiles').update({ employee_id: null }).eq('employee_id', empId)
+      await supabase.from('shifts').delete().eq('employee_id', empId)
+      await supabase.from('salary_payments').delete().eq('employee_id', empId)
+      const { error } = await supabase.from('employees').delete().eq('id', empId)
+      if (error) throw error
+      success(`Employee "${deleteEmpDialog.employee.name}" deleted successfully`)
+      setDeleteEmpDialog({ open: false, employee: null })
+      loadData()
+    } catch (err: any) {
+      showError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDeleteShift = async () => {
+    if (!deleteShiftDialog.shift) return
+    setSaving(true)
+    try {
+      const { error } = await supabase.from('shifts').delete().eq('id', deleteShiftDialog.shift.id)
+      if (error) throw error
+      success('Shift deleted successfully')
+      setDeleteShiftDialog({ open: false, shift: null })
+      loadData()
+    } catch (err: any) {
+      showError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDeleteSalary = async () => {
+    if (!deleteSalaryDialog.salary) return
+    setSaving(true)
+    try {
+      const { error } = await supabase.from('salary_payments').delete().eq('id', deleteSalaryDialog.salary.id)
+      if (error) throw error
+      success('Salary payment record deleted successfully')
+      setDeleteSalaryDialog({ open: false, salary: null })
+      loadData()
+    } catch (err: any) {
+      showError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const empOptions = employees.filter(e => e.is_active).map(e => ({ value: e.id, label: e.name }))
 
   return (
@@ -235,18 +292,29 @@ export default function AdminEmployeesPage() {
                     </span>
                   </td>
                   <td>
-                    <button className="btn btn-secondary btn-sm"
-                      onClick={() => {
-                        setEditEmp(emp)
-                        setEmpForm({
-                          name: emp.name, phone: emp.phone ?? '', role: emp.role,
-                          joining_date: emp.joining_date ?? '',
-                          salary_type: emp.salary_type, salary_amount: String(emp.salary_amount),
-                        })
-                        setEmpModal(true)
-                      }}>
-                      Edit
-                    </button>
+                    <div className="flex items-center gap-xs">
+                      <button className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          setEditEmp(emp)
+                          setEmpForm({
+                            name: emp.name, phone: emp.phone ?? '', role: emp.role,
+                            joining_date: emp.joining_date ?? '',
+                            salary_type: emp.salary_type, salary_amount: String(emp.salary_amount),
+                          })
+                          setEmpModal(true)
+                        }}>
+                        Edit
+                      </button>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        style={{ color: 'var(--danger)', padding: '4px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        title="Delete employee"
+                        onClick={() => setDeleteEmpDialog({ open: true, employee: emp })}
+                      >
+                        <Trash2 size={13} />
+                        <span>Delete</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -260,7 +328,7 @@ export default function AdminEmployeesPage() {
         <div className="table-wrapper">
           <table>
             <thead>
-              <tr><th>Employee</th><th>Role</th><th>Date</th><th>Time</th><th>Status</th></tr>
+              <tr><th>Employee</th><th>Role</th><th>Date</th><th>Time</th><th>Status</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {shifts.map((shift: any) => (
@@ -274,6 +342,17 @@ export default function AdminEmployeesPage() {
                       {shift.status}
                     </span>
                   </td>
+                  <td>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ color: 'var(--danger)', padding: '4px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      title="Delete shift"
+                      onClick={() => setDeleteShiftDialog({ open: true, shift })}
+                    >
+                      <Trash2 size={13} />
+                      <span>Delete</span>
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -286,7 +365,7 @@ export default function AdminEmployeesPage() {
         <div className="table-wrapper">
           <table>
             <thead>
-              <tr><th>Employee</th><th>Amount</th><th>Period</th><th>Payment Date</th><th>Status</th></tr>
+              <tr><th>Employee</th><th>Amount</th><th>Period</th><th>Payment Date</th><th>Status</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {salaries.map((s: any) => (
@@ -301,6 +380,17 @@ export default function AdminEmployeesPage() {
                     <span className={`badge ${s.status === 'paid' ? 'badge-success' : 'badge-warning'}`}>
                       {s.status}
                     </span>
+                  </td>
+                  <td>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ color: 'var(--danger)', padding: '4px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      title="Delete salary payment"
+                      onClick={() => setDeleteSalaryDialog({ open: true, salary: s })}
+                    >
+                      <Trash2 size={13} />
+                      <span>Delete</span>
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -402,6 +492,35 @@ export default function AdminEmployeesPage() {
             onChange={(e) => setSalaryForm(f => ({ ...f, notes: e.target.value }))} />
         </form>
       </Modal>
+
+      {/* Delete Confirmation Dialogs */}
+      <ConfirmDialog
+        open={deleteEmpDialog.open}
+        onClose={() => setDeleteEmpDialog({ open: false, employee: null })}
+        onConfirm={handleDeleteEmployee}
+        title="Delete Employee"
+        message={`Are you sure you want to permanently delete "${deleteEmpDialog.employee?.name}"? All assigned shifts and salary records will also be removed.`}
+        confirmLabel="Delete Employee"
+        loading={saving}
+      />
+      <ConfirmDialog
+        open={deleteShiftDialog.open}
+        onClose={() => setDeleteShiftDialog({ open: false, shift: null })}
+        onConfirm={handleDeleteShift}
+        title="Delete Shift"
+        message="Are you sure you want to delete this shift?"
+        confirmLabel="Delete Shift"
+        loading={saving}
+      />
+      <ConfirmDialog
+        open={deleteSalaryDialog.open}
+        onClose={() => setDeleteSalaryDialog({ open: false, salary: null })}
+        onConfirm={handleDeleteSalary}
+        title="Delete Salary Record"
+        message="Are you sure you want to delete this salary payment record?"
+        confirmLabel="Delete Record"
+        loading={saving}
+      />
     </div>
   )
 }

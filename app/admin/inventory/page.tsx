@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { Plus, Trash2, Edit2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/components/ui/ToastProvider'
 import { Modal, ConfirmDialog } from '@/components/ui/Modal'
@@ -43,6 +44,16 @@ export default function AdminInventoryPage() {
   const [editItem,     setEditItem]     = useState<InventoryItem | null>(null)
   const [itemForm,     setItemForm]     = useState({ name: '', category: '', unit: 'kg', minimum_quantity: '0', purchase_price: '', supplier_name: '' })
 
+  // Delete dialogs
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; item: InventoryItem | null }>({
+    open: false,
+    item: null,
+  })
+  const [deleteMovementDialog, setDeleteMovementDialog] = useState<{ open: boolean; movement: any | null }>({
+    open: false,
+    movement: null,
+  })
+
   // Stock-in form
   const [stockInForm,  setStockInForm]  = useState({ item_id: '', quantity: '', purchase_price: '', notes: '', date: new Date().toISOString().split('T')[0] })
 
@@ -50,6 +61,40 @@ export default function AdminInventoryPage() {
   const [stockOutForm, setStockOutForm] = useState({ item_id: '', quantity: '', reason: 'Used in restaurant', notes: '', date: new Date().toISOString().split('T')[0] })
 
   const [saving,   setSaving]   = useState(false)
+
+  const handleDeleteItem = async () => {
+    if (!deleteDialog.item) return
+    setSaving(true)
+    try {
+      // First delete associated stock movements if any exist to avoid foreign key violations
+      await supabase.from('stock_movements').delete().eq('item_id', deleteDialog.item.id)
+      const { error } = await supabase.from('inventory_items').delete().eq('id', deleteDialog.item.id)
+      if (error) throw error
+      success(`"${deleteDialog.item.name}" deleted successfully`)
+      setDeleteDialog({ open: false, item: null })
+      loadItems()
+    } catch (err: any) {
+      showError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDeleteMovement = async () => {
+    if (!deleteMovementDialog.movement) return
+    setSaving(true)
+    try {
+      const { error } = await supabase.from('stock_movements').delete().eq('id', deleteMovementDialog.movement.id)
+      if (error) throw error
+      success('Stock movement record deleted')
+      setDeleteMovementDialog({ open: false, movement: null })
+      loadMovements()
+    } catch (err: any) {
+      showError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const loadItems = useCallback(async () => {
     const { data } = await supabase.from('inventory_items').select('*').eq('is_active', true).order('name')
@@ -214,22 +259,33 @@ export default function AdminInventoryPage() {
                       )}
                     </td>
                     <td>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => {
-                          setEditItem(item)
-                          setItemForm({
-                            name: item.name, category: item.category ?? '',
-                            unit: item.unit,
-                            minimum_quantity: String(item.minimum_quantity),
-                            purchase_price: item.purchase_price != null ? String(item.purchase_price) : '',
-                            supplier_name: item.supplier_name ?? '',
-                          })
-                          setItemModal(true)
-                        }}
-                      >
-                        Edit
-                      </button>
+                      <div className="flex items-center gap-xs">
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => {
+                            setEditItem(item)
+                            setItemForm({
+                              name: item.name, category: item.category ?? '',
+                              unit: item.unit,
+                              minimum_quantity: String(item.minimum_quantity),
+                              purchase_price: item.purchase_price != null ? String(item.purchase_price) : '',
+                              supplier_name: item.supplier_name ?? '',
+                            })
+                            setItemModal(true)
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          style={{ color: 'var(--danger)', padding: '4px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                          title="Delete item"
+                          onClick={() => setDeleteDialog({ open: true, item })}
+                        >
+                          <Trash2 size={13} />
+                          <span>Delete</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -301,7 +357,7 @@ export default function AdminInventoryPage() {
               <tr>
                 <th>Date</th><th>Item</th><th>Type</th>
                 <th>Qty</th><th>Before</th><th>After</th>
-                <th>Reason</th><th>By</th>
+                <th>Reason</th><th>By</th><th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -324,6 +380,16 @@ export default function AdminInventoryPage() {
                   <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{m.reason ?? '—'}</td>
                   <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
                     {(m as any).profiles?.name ?? '—'}
+                  </td>
+                  <td>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ color: 'var(--danger)', padding: '4px 8px', display: 'inline-flex', alignItems: 'center' }}
+                      title="Delete stock movement"
+                      onClick={() => setDeleteMovementDialog({ open: true, movement: m })}
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -367,6 +433,28 @@ export default function AdminInventoryPage() {
             onChange={(e) => setItemForm(f => ({ ...f, supplier_name: e.target.value }))} />
         </form>
       </Modal>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteDialog.open}
+        onClose={() => setDeleteDialog({ open: false, item: null })}
+        onConfirm={handleDeleteItem}
+        title="Delete Inventory Item"
+        message={`Are you sure you want to permanently delete "${deleteDialog.item?.name}"? All associated stock movement records will also be deleted.`}
+        confirmLabel="Delete Item"
+        confirmClassName="btn btn-danger"
+        loading={saving}
+      />
+      <ConfirmDialog
+        open={deleteMovementDialog.open}
+        onClose={() => setDeleteMovementDialog({ open: false, movement: null })}
+        onConfirm={handleDeleteMovement}
+        title="Delete Movement Record"
+        message="Are you sure you want to delete this stock movement entry?"
+        confirmLabel="Delete Record"
+        confirmClassName="btn btn-danger"
+        loading={saving}
+      />
     </div>
   )
 }

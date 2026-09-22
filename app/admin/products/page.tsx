@@ -7,7 +7,7 @@ import { formatCurrency } from '@/lib/utils'
 import { Modal, ConfirmDialog } from '@/components/ui/Modal'
 import { Input, Select, Textarea } from '@/components/ui/FormFields'
 import { StatusBadge, Badge } from '@/components/ui/Badge'
-import { Plus, Search, UtensilsCrossed, Pencil, PowerOff } from 'lucide-react'
+import { Plus, Search, UtensilsCrossed, Trash2 } from 'lucide-react'
 import type { Product, ProductCategory } from '@/types/database'
 
 const EMPTY_FORM = {
@@ -24,18 +24,25 @@ export default function AdminProductsPage() {
   const [search,      setSearch]      = useState('')
   const [filterCat,   setFilterCat]   = useState('')
   const [loading,     setLoading]     = useState(true)
+
+  // Add/edit modal
   const [modal,       setModal]       = useState(false)
   const [editProduct, setEditProduct] = useState<Product | null>(null)
-  const [form,        setForm]        = useState({ ...EMPTY_FORM })
+  const [form,        setForm]        = useState(EMPTY_FORM)
   const [saving,      setSaving]      = useState(false)
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; product: Product | null }>({ open: false, product: null })
+
+  // Delete dialog
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; product: Product | null }>({
+    open: false,
+    product: null,
+  })
 
   const loadData = useCallback(async () => {
     const [{ data: prods }, { data: cats }] = await Promise.all([
-      supabase.from('products').select('*, product_categories(id,name)').order('name'),
+      supabase.from('products').select('*, product_categories(name)').order('name'),
       supabase.from('product_categories').select('*').order('name'),
     ])
-    setProducts(prods ?? [])
+    setProducts((prods as any) ?? [])
     setCategories(cats ?? [])
     setLoading(false)
   }, [supabase])
@@ -44,19 +51,19 @@ export default function AdminProductsPage() {
 
   const openAdd = () => {
     setEditProduct(null)
-    setForm({ ...EMPTY_FORM })
+    setForm(EMPTY_FORM)
     setModal(true)
   }
 
-  const openEdit = (p: Product) => {
-    setEditProduct(p)
+  const openEdit = (product: Product) => {
+    setEditProduct(product)
     setForm({
-      name:          p.name,
-      description:   p.description ?? '',
-      category_id:   p.category_id ?? '',
-      selling_price: String(p.selling_price),
-      cost_price:    p.cost_price != null ? String(p.cost_price) : '',
-      is_available:  p.is_available,
+      name:          product.name,
+      description:   product.description ?? '',
+      category_id:   product.category_id ?? '',
+      selling_price: String(product.selling_price),
+      cost_price:    product.cost_price != null ? String(product.cost_price) : '',
+      is_available:  product.is_available,
     })
     setModal(true)
   }
@@ -64,12 +71,12 @@ export default function AdminProductsPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name || !form.selling_price) {
-      showError('Name and selling price are required')
+      showError('Name and Selling Price are required')
       return
     }
     setSaving(true)
     try {
-      const payload: any = {
+      const payload = {
         name:          form.name.trim(),
         description:   form.description.trim() || null,
         category_id:   form.category_id || null,
@@ -96,16 +103,36 @@ export default function AdminProductsPage() {
     }
   }
 
-  const handleDeactivate = async () => {
+  const handleDelete = async () => {
     if (!deleteDialog.product) return
-    const { error } = await supabase
-      .from('products')
-      .update({ is_available: false })
-      .eq('id', deleteDialog.product.id)
-    if (error) { showError(error.message); return }
-    success('Product deactivated')
-    setDeleteDialog({ open: false, product: null })
-    loadData()
+    try {
+      // Unlink product from order items if needed so order history is preserved
+      await supabase.from('order_items').update({ product_id: null }).eq('product_id', deleteDialog.product.id)
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', deleteDialog.product.id)
+      if (error) throw error
+      success(`"${deleteDialog.product.name}" deleted successfully`)
+      setDeleteDialog({ open: false, product: null })
+      loadData()
+    } catch (err: any) {
+      showError(err.message)
+    }
+  }
+
+  const handleToggleAvailability = async (product: Product) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_available: !product.is_available })
+        .eq('id', product.id)
+      if (error) throw error
+      success(`"${product.name}" marked as ${!product.is_available ? 'Available' : 'Unavailable'}`)
+      loadData()
+    } catch (err: any) {
+      showError(err.message)
+    }
   }
 
   const filtered = products.filter((p) => {
@@ -235,19 +262,30 @@ export default function AdminProductsPage() {
                 )}
               </div>
 
-              <div className="flex gap-sm" style={{ marginTop: 'auto' }}>
+              <div className="flex gap-xs items-center" style={{ marginTop: 'auto', paddingTop: 'var(--space-xs)' }}>
                 <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => openEdit(product)}>
                   Edit
                 </button>
-                {product.is_available && (
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    style={{ color: 'var(--danger)' }}
-                    onClick={() => setDeleteDialog({ open: true, product })}
-                  >
-                    Deactivate
-                  </button>
-                )}
+                <button
+                  className="btn btn-ghost btn-sm"
+                  style={{
+                    color: product.is_available ? 'var(--text-muted)' : 'var(--success)',
+                    fontSize: '0.75rem',
+                    padding: '4px 8px',
+                  }}
+                  title={product.is_available ? 'Hide product from menu' : 'Show product on menu'}
+                  onClick={() => handleToggleAvailability(product)}
+                >
+                  {product.is_available ? 'Hide' : 'Show'}
+                </button>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: 'var(--danger)', padding: '4px 8px', display: 'inline-flex', alignItems: 'center' }}
+                  title="Delete product permanently"
+                  onClick={() => setDeleteDialog({ open: true, product })}
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
             </div>
           ))}
@@ -322,10 +360,10 @@ export default function AdminProductsPage() {
       <ConfirmDialog
         open={deleteDialog.open}
         onClose={() => setDeleteDialog({ open: false, product: null })}
-        onConfirm={handleDeactivate}
-        title="Deactivate Product"
-        message={`"${deleteDialog.product?.name}" will be marked as unavailable and hidden from waiters. Historical orders are preserved.`}
-        confirmLabel="Deactivate"
+        onConfirm={handleDelete}
+        title="Delete Product"
+        message={`Are you sure you want to permanently delete "${deleteDialog.product?.name}"? Historical orders will keep their records.`}
+        confirmLabel="Delete Product"
       />
     </div>
   )

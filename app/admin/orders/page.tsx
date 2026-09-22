@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { Receipt, User, Clock, ArrowRight } from 'lucide-react'
+import { Receipt, User, Clock, ArrowRight, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/components/ui/ToastProvider'
 import { formatCurrency, formatOrderNumber, formatDateTime } from '@/lib/utils'
 import { StatusBadge } from '@/components/ui/Badge'
+import { ConfirmDialog } from '@/components/ui/Modal'
 
 const TABS = [
   { label: 'Pending',   statuses: ['pending'] },
@@ -17,9 +19,14 @@ const TABS = [
 
 export default function AdminOrdersPage() {
   const supabase   = createClient()
+  const { success, error: showError } = useToast()
   const [orders,   setOrders]   = useState<any[]>([])
   const [activeTab, setActiveTab] = useState(0)
   const [loading,  setLoading]  = useState(true)
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; order: any | null }>({
+    open: false,
+    order: null,
+  })
 
   const loadOrders = useCallback(async () => {
     try {
@@ -50,6 +57,20 @@ export default function AdminOrdersPage() {
     }
     return () => { if (channel) supabase.removeChannel(channel) }
   }, [supabase, loadOrders])
+
+  const handleDeleteOrder = async () => {
+    if (!deleteDialog.order) return
+    try {
+      await supabase.from('order_items').delete().eq('order_id', deleteDialog.order.id)
+      const { error } = await supabase.from('orders').delete().eq('id', deleteDialog.order.id)
+      if (error) throw error
+      success(`Order ${formatOrderNumber(deleteDialog.order.order_number)} deleted`)
+      setDeleteDialog({ open: false, order: null })
+      loadOrders()
+    } catch (err: any) {
+      showError(err.message ?? 'Failed to delete order')
+    }
+  }
 
   const filtered = orders.filter((o) => TABS[activeTab].statuses.includes(o.status))
   const pendingCount = orders.filter((o) => o.status === 'pending').length
@@ -162,14 +183,24 @@ export default function AdminOrdersPage() {
                     <span className="badge badge-default">Table {order.table_number}</span>
                   )}
                 </div>
-                <Link
-                  href={`/admin/orders/${order.id}`}
-                  className="btn btn-secondary btn-sm"
-                  style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-                >
-                  <span>View</span>
-                  <ArrowRight size={13} />
-                </Link>
+                <div className="flex items-center gap-xs">
+                  <Link
+                    href={`/admin/orders/${order.id}`}
+                    className="btn btn-secondary btn-sm"
+                    style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                  >
+                    <span>View</span>
+                    <ArrowRight size={13} />
+                  </Link>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    style={{ color: 'var(--danger)', padding: '4px 8px', display: 'inline-flex', alignItems: 'center' }}
+                    title="Delete order"
+                    onClick={() => setDeleteDialog({ open: true, order })}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
 
               <div className="flex gap-md text-sm text-secondary" style={{ marginBottom: 'var(--space-sm)' }}>
@@ -203,6 +234,15 @@ export default function AdminOrdersPage() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteDialog.open}
+        onClose={() => setDeleteDialog({ open: false, order: null })}
+        onConfirm={handleDeleteOrder}
+        title="Delete Order"
+        message={`Are you sure you want to permanently delete order ${formatOrderNumber(deleteDialog.order?.order_number ?? 0)}? All related order items will be removed.`}
+        confirmLabel="Delete Order"
+      />
     </div>
   )
 }

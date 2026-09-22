@@ -6,7 +6,7 @@ import { useToast } from '@/components/ui/ToastProvider'
 import { Modal, ConfirmDialog } from '@/components/ui/Modal'
 import { Input, Select, Textarea } from '@/components/ui/FormFields'
 import { formatCurrency } from '@/lib/utils'
-import { Plus, Receipt } from 'lucide-react'
+import { Plus, Receipt, Trash2 } from 'lucide-react'
 import type { Expense, ExpenseCategory } from '@/types/database'
 
 export default function AdminExpensesPage() {
@@ -204,9 +204,14 @@ export default function AdminExpensesPage() {
                         }}>
                         Edit
                       </button>
-                      <button className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)' }}
-                        onClick={() => setDeleteDialog({ open: true, expense })}>
-                        Delete
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        style={{ color: 'var(--danger)', padding: '4px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        title="Delete expense"
+                        onClick={() => setDeleteDialog({ open: true, expense })}
+                      >
+                        <Trash2 size={13} />
+                        <span>Delete</span>
                       </button>
                     </div>
                   </td>
