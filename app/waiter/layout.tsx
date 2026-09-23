@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { WaiterBottomNav } from '@/components/waiter/WaiterBottomNav'
 import { WaiterSignOutButton } from '@/components/waiter/WaiterSignOutButton'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { TandooriStopLogo } from '@/components/ui/TandooriStopLogo'
 
 export const metadata: Metadata = {
   title: 'Waiter — RestaurantMS',
@@ -61,23 +62,7 @@ export default async function WaiterLayout({ children }: { children: React.React
     <div className="waiter-layout">
       <header className="waiter-topbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 'var(--radius-sm)',
-              background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-            }}
-          >
-            <UtensilsCrossed size={18} />
-          </div>
-          <span style={{ fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-            RestaurantMS
-          </span>
+          <TandooriStopLogo variant="compact" size="sm" showSubtitle={false} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
           <ThemeToggle />
@@ -108,7 +93,7 @@ export default async function WaiterLayout({ children }: { children: React.React
             >
               {profile.name.charAt(0).toUpperCase()}
             </span>
-            <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
+            <span className="hidden-mobile" style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
               {profile.name}
             </span>
           </div>

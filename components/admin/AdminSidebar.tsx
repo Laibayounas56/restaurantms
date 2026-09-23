@@ -12,22 +12,24 @@ import {
   CreditCard,
   BarChart3,
   LogOut,
-  Utensils,
   Menu,
   X,
+  Sparkles,
+  ShieldCheck,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { TandooriStopLogo } from '@/components/ui/TandooriStopLogo'
 import type { Profile } from '@/types/database'
 
 const NAV_ITEMS = [
   { label: 'Dashboard',  href: '/admin',              icon: LayoutDashboard },
   { label: 'Orders',     href: '/admin/orders',        icon: Receipt,         section: 'Operations' },
-  { label: 'Products',   href: '/admin/products',      icon: UtensilsCrossed },
+  { label: 'Menu & Food', href: '/admin/products',     icon: UtensilsCrossed },
   { label: 'Inventory',  href: '/admin/inventory',     icon: Boxes },
-  { label: 'Employees',  href: '/admin/employees',     icon: Users,           section: 'Management' },
+  { label: 'Staff',      href: '/admin/employees',     icon: Users,           section: 'Management' },
   { label: 'Expenses',   href: '/admin/expenses',      icon: CreditCard },
-  { label: 'Reports',    href: '/admin/reports/sales', icon: BarChart3 },
+  { label: 'Analytics',  href: '/admin/reports/sales', icon: BarChart3 },
 ]
 
 interface AdminSidebarProps {
@@ -39,6 +41,7 @@ export function AdminSidebar({ profile }: AdminSidebarProps) {
   const router   = useRouter()
   const supabase = createClient()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0)
 
   // Auto-close mobile drawer when navigating to a new route
   useEffect(() => {
@@ -56,6 +59,36 @@ export function AdminSidebar({ profile }: AdminSidebarProps) {
       document.body.style.overflow = ''
     }
   }, [mobileOpen])
+
+  // Fetch count of pending orders for live badge
+  useEffect(() => {
+    async function fetchPendingCount() {
+      try {
+        const { count, error } = await supabase
+          .from('orders')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending')
+        if (!error && count !== null) {
+          setPendingOrdersCount(count)
+        }
+      } catch {
+        // Fallback
+      }
+    }
+    fetchPendingCount()
+
+    // Realtime listener for order count updates
+    const channel = supabase
+      .channel('sidebar-orders-counter')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        fetchPendingCount()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase])
 
   const handleSignOut = async () => {
     document.cookie = 'test_auth_role=; path=/; max-age=0'
@@ -78,36 +111,19 @@ export function AdminSidebar({ profile }: AdminSidebarProps) {
   return (
     <>
       {/* Sticky Mobile Top Header with Hamburger */}
-      <header className="admin-mobile-header">
+      <header className="admin-mobile-header" style={{ background: '#111111', borderBottom: '1px solid #222222' }}>
         <div className="flex items-center gap-sm">
           <button
             type="button"
             className="mobile-hamburger-btn"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            style={{ background: '#1C1C1C', borderColor: '#2B2B2B', color: '#FFFFFF' }}
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
 
-          <div className="flex items-center gap-xs">
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 'var(--radius-sm)',
-                background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff',
-              }}
-            >
-              <Utensils size={15} />
-            </div>
-            <span style={{ fontWeight: 700, fontSize: '0.9375rem', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
-              RestaurantMS
-            </span>
-          </div>
+          <TandooriStopLogo variant="compact" size="sm" showSubtitle={false} />
         </div>
 
         <div className="flex items-center gap-sm">
@@ -117,12 +133,13 @@ export function AdminSidebar({ profile }: AdminSidebarProps) {
               width: 32,
               height: 32,
               borderRadius: 'var(--radius-full)',
-              background: 'var(--primary-muted)',
+              background: 'rgba(241, 24, 104, 0.2)',
+              border: '1px solid rgba(241, 24, 104, 0.4)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--primary-light)',
-              fontWeight: 700,
+              color: 'var(--brand-yellow)',
+              fontWeight: 800,
               fontSize: '0.8125rem',
             }}
           >
@@ -141,46 +158,58 @@ export function AdminSidebar({ profile }: AdminSidebarProps) {
 
       <aside className={`admin-sidebar${mobileOpen ? ' open' : ''}`}>
         {/* Brand Header */}
-        <div className="sidebar-brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-            <div
-              className="sidebar-brand-icon"
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: 'var(--radius-md)',
-                background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff',
-                boxShadow: 'var(--shadow-glow)',
-              }}
-            >
-              <Utensils size={20} />
-            </div>
-            <div>
-              <div className="sidebar-brand-name" style={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
-                RestaurantMS
-              </div>
-              <div className="sidebar-brand-sub" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Admin Portal
-              </div>
-            </div>
-          </div>
+        <div
+          className="sidebar-brand"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '20px 18px',
+            borderBottom: '1px solid #222222',
+            background: 'linear-gradient(180deg, #161616 0%, #111111 100%)',
+          }}
+        >
+          <Link href="/admin" onClick={() => setMobileOpen(false)} style={{ textDecoration: 'none' }}>
+            <TandooriStopLogo variant="full" size="md" subtitle="OPERATIONS DASHBOARD" />
+          </Link>
 
           <button
             type="button"
             className="mobile-sidebar-close-btn"
             onClick={() => setMobileOpen(false)}
             aria-label="Close navigation menu"
+            style={{ color: '#9CA3AF' }}
           >
             <X size={18} />
           </button>
         </div>
 
+        {/* Live Restaurant Status Pill */}
+        <div style={{ padding: '14px 18px 6px' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '6px 12px',
+              borderRadius: 'var(--radius-md)',
+              background: '#181818',
+              border: '1px solid #282828',
+              fontSize: '0.75rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="live-dot" style={{ width: 7, height: 7 }} />
+              <span style={{ color: '#E5E7EB', fontWeight: 600 }}>Tandoor Active</span>
+            </div>
+            <span style={{ color: 'var(--brand-yellow)', fontWeight: 700, fontSize: '0.6875rem' }}>
+              ONLINE
+            </span>
+          </div>
+        </div>
+
         {/* Nav Links */}
-        <nav className="sidebar-nav" style={{ padding: 'var(--space-sm) var(--space-xs)' }}>
+        <nav className="sidebar-nav" style={{ padding: '8px 12px', flex: 1 }}>
           {NAV_ITEMS.map((item) => {
             const showSection = item.section && item.section !== currentSection
             if (item.section) currentSection = item.section
@@ -194,11 +223,11 @@ export function AdminSidebar({ profile }: AdminSidebarProps) {
                     className="sidebar-section-label"
                     style={{
                       fontSize: '0.6875rem',
-                      fontWeight: 600,
+                      fontWeight: 700,
                       textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      color: 'var(--text-muted)',
-                      padding: '12px 12px 4px',
+                      letterSpacing: '0.08em',
+                      color: '#6B7280',
+                      padding: '14px 14px 6px',
                     }}
                   >
                     {item.section}
@@ -208,27 +237,32 @@ export function AdminSidebar({ profile }: AdminSidebarProps) {
                   href={item.href}
                   className={`nav-item ${active ? 'active' : ''}`}
                   onClick={() => setMobileOpen(false)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radius-md)',
-                    fontSize: '0.875rem',
-                    fontWeight: active ? 600 : 500,
-                    color: active ? 'var(--primary-light)' : 'var(--text-secondary)',
-                    background: active ? 'var(--primary-muted)' : 'transparent',
-                    transition: 'all var(--transition-fast)',
-                  }}
                 >
                   <Icon
                     size={18}
                     style={{
-                      color: active ? 'var(--primary-light)' : 'var(--text-muted)',
+                      color: active ? 'var(--brand-yellow)' : '#9CA3AF',
                       flexShrink: 0,
                     }}
                   />
-                  <span>{item.label}</span>
+                  <span style={{ flex: 1 }}>{item.label}</span>
+
+                  {/* Orders Live Counter Pill */}
+                  {item.href === '/admin/orders' && pendingOrdersCount > 0 && (
+                    <span
+                      style={{
+                        padding: '1px 7px',
+                        borderRadius: '9999px',
+                        background: 'var(--brand-yellow)',
+                        color: '#111111',
+                        fontSize: '0.6875rem',
+                        fontWeight: 800,
+                        boxShadow: '0 0 8px rgba(250, 229, 93, 0.4)',
+                      }}
+                    >
+                      {pendingOrdersCount}
+                    </span>
+                  )}
                 </Link>
               </div>
             )
@@ -239,9 +273,9 @@ export function AdminSidebar({ profile }: AdminSidebarProps) {
         <div
           style={{
             marginTop: 'auto',
-            padding: 'var(--space-md)',
-            borderTop: '1px solid var(--border)',
-            background: 'var(--bg-elevated)',
+            padding: '14px 16px',
+            borderTop: '1px solid #222222',
+            background: '#151515',
           }}
         >
           <div
@@ -249,22 +283,24 @@ export function AdminSidebar({ profile }: AdminSidebarProps) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: 'var(--space-sm)',
+              marginBottom: 12,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
               <div
                 style={{
-                  width: 32,
-                  height: 32,
+                  width: 34,
+                  height: 34,
                   borderRadius: 'var(--radius-full)',
-                  background: 'var(--primary-muted)',
+                  background: 'linear-gradient(135deg, var(--brand-red) 0%, var(--brand-red-dark) 100%)',
+                  border: '1.5px solid rgba(250, 229, 93, 0.3)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'var(--primary-light)',
-                  fontWeight: 700,
+                  color: '#FFFFFF',
+                  fontWeight: 800,
                   fontSize: '0.8125rem',
+                  boxShadow: '0 0 10px rgba(241, 24, 104, 0.35)',
                   flexShrink: 0,
                 }}
               >
@@ -274,8 +310,8 @@ export function AdminSidebar({ profile }: AdminSidebarProps) {
                 <div
                   style={{
                     fontSize: '0.8125rem',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
+                    fontWeight: 700,
+                    color: '#F9FAFB',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
@@ -283,8 +319,9 @@ export function AdminSidebar({ profile }: AdminSidebarProps) {
                 >
                   {profile.name}
                 </div>
-                <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-                  Admin
+                <div style={{ fontSize: '0.6875rem', color: 'var(--brand-yellow)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <ShieldCheck size={11} />
+                  <span>Restaurant Admin</span>
                 </div>
               </div>
             </div>
@@ -303,7 +340,9 @@ export function AdminSidebar({ profile }: AdminSidebarProps) {
               justifyContent: 'center',
               gap: 6,
               fontSize: '0.8125rem',
-              color: 'var(--text-muted)',
+              color: '#9CA3AF',
+              background: '#1C1C1C',
+              borderColor: '#2B2B2B',
             }}
           >
             <LogOut size={14} />

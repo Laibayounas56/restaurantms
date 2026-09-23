@@ -282,10 +282,19 @@ export default function OrderDetailPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                 <button
                   id="accept-order-btn"
-                  className="btn btn-success btn-full"
+                  className="btn btn-full"
                   onClick={() => setConfirmDialog({ open: true, action: 'accept' })}
                   disabled={actionLoading}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    background: 'var(--brand-yellow)',
+                    color: '#111111',
+                    fontWeight: 700,
+                    border: 'none',
+                  }}
                 >
                   <Check size={16} />
                   <span>Accept Order</span>

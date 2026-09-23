@@ -5,39 +5,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 /* ─── CSS VARIABLES & THEMES ─────────────────────────────────── */
-:root,
-[data-theme="dark"] {
-  /* Brand palette */
-  --primary:        hsl(24, 92%, 50%);
-  --primary-light:  hsl(24, 92%, 62%);
-  --primary-dark:   hsl(24, 92%, 40%);
-  --primary-muted:  hsla(24, 92%, 50%, 0.15);
-  --primary-glow:   hsla(24, 92%, 50%, 0.25);
-
-  /* Semantic colors */
-  --success:        hsl(142, 70%, 45%);
-  --success-muted:  hsla(142, 70%, 45%, 0.15);
-  --warning:        hsl(42, 95%, 52%);
-  --warning-muted:  hsla(42, 95%, 52%, 0.15);
-  --danger:         hsl(0, 75%, 58%);
-  --danger-muted:   hsla(0, 75%, 58%, 0.15);
-  --info:           hsl(215, 90%, 58%);
-  --info-muted:     hsla(215, 90%, 58%, 0.15);
-
-  /* Dark Neutral palette */
-  --bg:             hsl(224, 16%, 8%);
-  --bg-card:        hsl(224, 15%, 11%);
-  --bg-elevated:    hsl(224, 14%, 15%);
-  --bg-input:       hsl(224, 14%, 13%);
-  --surface-hover:  hsl(224, 14%, 16%);
-  --border:         hsl(224, 12%, 18%);
-  --border-light:   hsl(224, 12%, 24%);
-
-  /* Dark Text */
-  --text-primary:   hsl(210, 20%, 98%);
-  --text-secondary: hsl(215, 14%, 70%);
-  --text-muted:     hsl(215, 12%, 48%);
-  --text-inverse:   hsl(224, 16%, 8%);
+:root {
+  /* Tandoori Stop Official Centralized Brand Palette */
+  --brand-red:          #F11868;
+  --brand-red-dark:     #E6353E;
+  --brand-red-light:    #FF3B82;
+  --brand-yellow:       #FAE55D;
+  --brand-yellow-dark:  #D57E1D;
+  --brand-yellow-light: #FFF085;
+  --brand-black:        #111111;
+  --brand-surface-dark: #181818;
+  --brand-white:        #FFFFFF;
 
   /* Spacing */
   --space-xs:   4px;
@@ -54,64 +32,117 @@
   --radius-xl:  20px;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-sm:  0 1px 2px rgba(0,0,0,0.4);
-  --shadow-md:  0 4px 12px rgba(0,0,0,0.45);
-  --shadow-lg:  0 8px 30px rgba(0,0,0,0.55);
-  --shadow-xl:  0 20px 40px rgba(0,0,0,0.65);
-  --shadow-glow: 0 0 20px var(--primary-glow);
+  /* Layout */
+  --sidebar-width:    260px;
+  --topbar-height:    64px;
+  --bottom-nav-height: 64px;
+  --content-max-width: 1280px;
 
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-base: 220ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-  /* Layout */
-  --sidebar-width:    240px;
-  --topbar-height:    60px;
-  --bottom-nav-height: 64px;
-  --content-max-width: 1200px;
+:root,
+[data-theme="dark"] {
+  /* Brand palette mapped to Tandoori Stop */
+  --primary:        var(--brand-red);
+  --primary-light:  var(--brand-red-light);
+  --primary-dark:   var(--brand-red-dark);
+  --primary-muted:  rgba(241, 24, 104, 0.15);
+  --primary-glow:   rgba(241, 24, 104, 0.35);
+
+  /* Secondary / Highlights */
+  --accent-yellow:       var(--brand-yellow);
+  --accent-yellow-muted: rgba(250, 229, 93, 0.18);
+
+  /* Semantic colors */
+  --success:        #10B981;
+  --success-muted:  rgba(16, 185, 129, 0.15);
+  --warning:        var(--brand-yellow);
+  --warning-muted:  rgba(250, 229, 93, 0.16);
+  --danger:         #EF4444;
+  --danger-muted:   rgba(239, 68, 68, 0.15);
+  --info:           #38BDF8;
+  --info-muted:     rgba(56, 189, 248, 0.15);
+
+  /* Dark Neutral palette */
+  --bg:             #0D0D0D;
+  --bg-card:        #161616;
+  --bg-elevated:    #212121;
+  --bg-input:       #1A1A1A;
+  --surface-hover:  #242424;
+  --border:         #2B2B2B;
+  --border-light:   #383838;
+
+  /* Navigation: Deep Black */
+  --sidebar-bg:     #111111;
+  --sidebar-border: #222222;
+
+  /* Dark Text */
+  --text-primary:   #F9FAFB;
+  --text-secondary: #D1D5DB;
+  --text-muted:     #9CA3AF;
+  --text-inverse:   #111111;
+
+  /* Shadows */
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.5);
+  --shadow-md:  0 4px 12px rgba(0,0,0,0.55);
+  --shadow-lg:  0 8px 30px rgba(0,0,0,0.65);
+  --shadow-xl:  0 20px 40px rgba(0,0,0,0.75);
+  --shadow-glow: 0 0 20px var(--primary-glow);
+  --shadow-glow-yellow: 0 0 16px rgba(250, 229, 93, 0.3);
 }
 
 [data-theme="light"] {
-  /* Brand palette */
-  --primary:        hsl(24, 92%, 48%);
-  --primary-light:  hsl(24, 92%, 58%);
-  --primary-dark:   hsl(24, 92%, 38%);
-  --primary-muted:  hsla(24, 92%, 48%, 0.1);
-  --primary-glow:   hsla(24, 92%, 48%, 0.2);
+  /* Brand palette mapped to Tandoori Stop */
+  --primary:        var(--brand-red);
+  --primary-light:  var(--brand-red-light);
+  --primary-dark:   var(--brand-red-dark);
+  --primary-muted:  rgba(241, 24, 104, 0.10);
+  --primary-glow:   rgba(241, 24, 104, 0.22);
+
+  /* Secondary / Highlights */
+  --accent-yellow:       var(--brand-yellow);
+  --accent-yellow-muted: rgba(250, 229, 93, 0.25);
 
   /* Semantic colors */
-  --success:        hsl(142, 68%, 38%);
-  --success-muted:  hsla(142, 68%, 38%, 0.1);
-  --warning:        hsl(38, 92%, 45%);
-  --warning-muted:  hsla(38, 92%, 45%, 0.1);
-  --danger:         hsl(0, 72%, 52%);
-  --danger-muted:   hsla(0, 72%, 52%, 0.1);
-  --info:           hsl(215, 88%, 48%);
-  --info-muted:     hsla(215, 88%, 48%, 0.1);
+  --success:        #059669;
+  --success-muted:  rgba(5, 150, 105, 0.12);
+  --warning:        #B45309;
+  --warning-muted:  rgba(250, 229, 93, 0.28);
+  --danger:         #DC2626;
+  --danger-muted:   rgba(220, 38, 38, 0.12);
+  --info:           #0284C7;
+  --info-muted:     rgba(2, 132, 199, 0.12);
 
   /* Light Neutral palette */
-  --bg:             hsl(210, 24%, 98%);
-  --bg-card:        #ffffff;
-  --bg-elevated:    hsl(210, 24%, 95%);
-  --bg-input:       #ffffff;
-  --surface-hover:  hsl(210, 24%, 94%);
-  --border:         hsl(214, 20%, 88%);
-  --border-light:   hsl(214, 20%, 93%);
+  --bg:             #F8FAFC;
+  --bg-card:        #FFFFFF;
+  --bg-elevated:    #F1F5F9;
+  --bg-input:       #FFFFFF;
+  --surface-hover:  #F1F5F9;
+  --border:         #E2E8F0;
+  --border-light:   #F1F5F9;
+
+  /* Navigation: Deep Black Charcoal */
+  --sidebar-bg:     #111111;
+  --sidebar-border: #222222;
 
   /* Light Text */
-  --text-primary:   hsl(222, 47%, 12%);
-  --text-secondary: hsl(215, 18%, 38%);
-  --text-muted:     hsl(215, 14%, 55%);
-  --text-inverse:   #ffffff;
+  --text-primary:   #0F172A;
+  --text-secondary: #475569;
+  --text-muted:     #64748B;
+  --text-inverse:   #FFFFFF;
 
   /* Shadows */
-  --shadow-sm:  0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md:  0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
-  --shadow-lg:  0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
-  --shadow-xl:  0 20px 25px -5px rgba(0, 0, 0, 0.09), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+  --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md:  0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --shadow-lg:  0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-xl:  0 20px 25px -5px rgba(0, 0, 0, 0.09), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
   --shadow-glow: 0 0 16px var(--primary-glow);
+  --shadow-glow-yellow: 0 0 14px rgba(250, 229, 93, 0.25);
 }
 
 /* ─── RESET & BASE ──────────────────────────────────────────── */
@@ -156,8 +187,8 @@ a:hover { color: var(--primary-light); }
 .admin-sidebar {
   width: var(--sidebar-width);
   flex-shrink: 0;
-  background: var(--bg-card);
-  border-right: 1px solid var(--border);
+  background: var(--sidebar-bg, #111111);
+  border-right: 1px solid var(--sidebar-border, #222222);
   position: fixed;
   top: 0;
   left: 0;
@@ -165,6 +196,7 @@ a:hover { color: var(--primary-light); }
   overflow-y: auto;
   z-index: 100;
   transition: transform var(--transition-base);
+  color: #FFFFFF;
 }
 
 .admin-main {
@@ -271,13 +303,14 @@ a:hover { color: var(--primary-light); }
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--primary), var(--primary-light));
+  background: linear-gradient(90deg, var(--brand-red) 0%, var(--brand-yellow) 100%);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
+  border-color: rgba(241, 24, 104, 0.25);
 }
 
 .stat-card .stat-label {
@@ -301,7 +334,7 @@ a:hover { color: var(--primary-light); }
   top: var(--space-lg);
   right: var(--space-lg);
   color: var(--primary);
-  opacity: 0.7;
+  opacity: 0.85;
 }
 
 /* ─── BUTTONS ───────────────────────────────────────────────── */
@@ -329,14 +362,16 @@ a:hover { color: var(--primary-light); }
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: var(--brand-red);
   color: #fff;
-  border-color: var(--primary);
+  border-color: var(--brand-red);
+  box-shadow: 0 2px 8px rgba(241, 24, 104, 0.25);
 }
 .btn-primary:hover:not(:disabled) {
-  background: var(--primary-dark);
-  border-color: var(--primary-dark);
-  box-shadow: var(--shadow-glow);
+  background: var(--brand-red-dark);
+  border-color: var(--brand-red-dark);
+  box-shadow: 0 4px 16px rgba(241, 24, 104, 0.45);
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
@@ -411,11 +446,15 @@ a:hover { color: var(--primary-light); }
 }
 
 .badge-success  { background: var(--success-muted);  color: var(--success); }
-.badge-warning  { background: var(--warning-muted);  color: var(--warning); }
+.badge-warning  { background: var(--warning-muted);  color: #B45309; border: 1px solid rgba(250, 229, 93, 0.4); }
+[data-theme="dark"] .badge-warning { color: var(--brand-yellow); border-color: rgba(250, 229, 93, 0.3); }
 .badge-danger   { background: var(--danger-muted);   color: var(--danger); }
 .badge-info     { background: var(--info-muted);     color: var(--info); }
-.badge-default  { background: var(--bg-elevated);    color: var(--text-secondary); }
-.badge-primary  { background: var(--primary-muted);  color: var(--primary-light); }
+.badge-default  { background: var(--bg-elevated);    color: var(--text-secondary); border: 1px solid var(--border); }
+.badge-primary,
+.badge-brand    { background: var(--primary-muted);  color: var(--brand-red); border: 1px solid rgba(241, 24, 104, 0.3); }
+.badge-yellow   { background: rgba(250, 229, 93, 0.2); color: #B45309; border: 1px solid rgba(250, 229, 93, 0.4); }
+[data-theme="dark"] .badge-yellow { color: var(--brand-yellow); }
 
 /* ─── FORMS ─────────────────────────────────────────────────── */
 .form-group {
@@ -595,32 +634,48 @@ tbody tr:hover {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  padding: 10px var(--space-sm);
+  padding: 10px 14px;
   border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  font-size: 0.9375rem;
+  color: #9CA3AF;
+  font-size: 0.875rem;
   font-weight: 500;
   text-decoration: none;
   transition: all var(--transition-fast);
   cursor: pointer;
-  border: none;
+  border: 1px solid transparent;
   background: none;
   width: 100%;
   text-align: left;
+  position: relative;
 }
 
 .nav-item:hover {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
+  background: #1C1C1C;
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.06);
 }
 
 .nav-item.active {
-  background: var(--primary-muted);
-  color: var(--primary-light);
+  background: linear-gradient(90deg, rgba(241, 24, 104, 0.2) 0%, rgba(241, 24, 104, 0.05) 100%);
+  color: #FFFFFF;
+  border-color: rgba(241, 24, 104, 0.3);
+  font-weight: 600;
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: var(--brand-red);
+  box-shadow: 0 0 8px var(--brand-red);
 }
 
 .nav-item.active svg {
-  color: var(--primary);
+  color: var(--brand-yellow);
 }
 
 /* Bottom nav items */
@@ -1206,8 +1261,91 @@ tbody tr:hover {
 
 @media (max-width: 768px) {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hidden-mobile { display: none !important; }
 }
 @media (max-width: 1024px) {
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .hidden-desktop { display: none !important; }
 }
+
+@media (max-width: 900px) {
+  .login-split-container {
+    grid-template-columns: 1fr !important;
+  }
+  .login-hero-panel {
+    display: none !important;
+  }
+}
+
+/* ─── TANDOORI STOP BRAND UTILITIES ────────────────────────── */
+.brand-gradient-text {
+  background: linear-gradient(135deg, var(--brand-red) 0%, var(--brand-yellow) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-hero-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, #181818 0%, #111111 100%);
+  border: 1px solid rgba(241, 24, 104, 0.25);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  color: #FFFFFF;
+}
+
+.brand-hero-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(241, 24, 104, 0.18) 0%, rgba(250, 229, 93, 0.08) 40%, transparent 70%);
+  pointer-events: none;
+}
+
+.food-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all var(--transition-base);
+  display: flex;
+  flex-direction: column;
+}
+
+.food-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(241, 24, 104, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.food-card-img-wrapper {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  background: #181818;
+  overflow: hidden;
+}
+
+.food-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.food-card:hover .food-card-img {
+  transform: scale(1.05);
+}
+
+.glow-brand-sm {
+  box-shadow: 0 0 14px rgba(241, 24, 104, 0.3);
+}
+
+.glow-yellow-sm {
+  box-shadow: 0 0 12px rgba(250, 229, 93, 0.35);
+}
+

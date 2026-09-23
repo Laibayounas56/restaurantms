@@ -6,8 +6,8 @@ import { AdminSidebar } from '@/components/admin/AdminSidebar'
 import type { Profile } from '@/types/database'
 
 export const metadata: Metadata = {
-  title: 'Admin — RestaurantMS',
-  description: 'Restaurant Management System Admin Portal',
+  title: 'Admin Dashboard — Tandoori Stop',
+  description: 'Tandoori Stop Restaurant Operations & Management Portal',
 }
 
 const DEFAULT_ADMIN_PROFILE: Profile = {

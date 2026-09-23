@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import {
-  UtensilsCrossed,
   Mail,
   Lock,
   Eye,
@@ -16,10 +16,15 @@ import {
   Check,
   X,
   ArrowRight,
+  Flame,
+  ChefHat,
+  BarChart3,
+  Clock,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/components/ui/ToastProvider'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { TandooriStopLogo } from '@/components/ui/TandooriStopLogo'
 import { TEST_ACCOUNTS, SEED_USERS_SQL, type TestAccount } from '@/lib/auth/test-users'
 
 export default function LoginPage() {
@@ -52,10 +57,7 @@ export default function LoginPage() {
     )
 
     if (matchedTest) {
-      // Set test session cookie (guarantees immediate instant login!)
       document.cookie = `test_auth_role=${matchedTest.role}; path=/; max-age=604800; SameSite=Lax`
-
-      // Also attempt Supabase signIn in background to sync auth if available
       supabase.auth.signInWithPassword({ email, password }).catch(() => {})
 
       showSuccess(`Authenticated as ${matchedTest.label}! (Hardcoded Test Account)`)
@@ -75,7 +77,7 @@ export default function LoginPage() {
     })
 
     if (error) {
-      showError('Invalid email or password. For testing, use the hardcoded test credentials below.')
+      showError('Invalid email or password. For quick testing, use the test credentials below.')
       return
     }
 
@@ -159,115 +161,382 @@ export default function LoginPage() {
     <div
       style={{
         minHeight: '100vh',
+        display: 'grid',
+        gridTemplateColumns: '1.05fr 1fr',
         background: 'var(--bg)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 'var(--space-lg)',
         position: 'relative',
       }}
+      className="login-split-container"
     >
       {/* Top right Theme Toggle */}
-      <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }}>
+      <div style={{ position: 'fixed', top: 20, right: 24, zIndex: 30 }}>
         <ThemeToggle showLabel />
       </div>
 
-      {/* Background glow */}
+      {/* ─── LEFT SHOWCASE HERO ─────────────────────────────────── */}
       <div
-        aria-hidden
+        className="login-hero-panel"
         style={{
-          position: 'fixed',
-          inset: 0,
-          pointerEvents: 'none',
-          background:
-            'radial-gradient(ellipse 60% 50% at 50% 0%, var(--primary-glow) 0%, transparent 70%)',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '48px 48px',
+          overflow: 'hidden',
+          background: '#0D0D0D',
+          color: '#FFFFFF',
         }}
-      />
-
-      <div style={{ width: '100%', maxWidth: 440, position: 'relative' }}>
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 'var(--space-lg)' }}>
+      >
+        {/* Background Image with atmospheric warm glow overlay */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 1,
+          }}
+        >
+          <img
+            src="/images/food/hero-tandoor.jpg"
+            alt="Tandoori Stop Kitchen"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center',
+              filter: 'brightness(0.55) contrast(1.1)',
+            }}
+          />
+          {/* Dual Gradient Overlays */}
           <div
             style={{
-              width: 56,
-              height: 56,
-              background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
-              borderRadius: 'var(--radius-lg)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto var(--space-sm)',
-              boxShadow: 'var(--shadow-glow)',
-              color: '#ffffff',
+              position: 'absolute',
+              inset: 0,
+              background:
+                'linear-gradient(135deg, rgba(17,17,17,0.85) 0%, rgba(241,24,104,0.3) 50%, rgba(17,17,17,0.92) 100%)',
             }}
-          >
-            <UtensilsCrossed size={28} />
-          </div>
-          <h1
+          />
+          <div
             style={{
-              fontSize: '1.625rem',
-              fontWeight: 800,
-              color: 'var(--text-primary)',
-              letterSpacing: '-0.02em',
+              position: 'absolute',
+              inset: 0,
+              background:
+                'radial-gradient(ellipse at bottom left, rgba(250,229,93,0.18) 0%, transparent 60%)',
             }}
-          >
-            RestaurantMS
-          </h1>
-          <p style={{ color: 'var(--text-muted)', marginTop: 4, fontSize: '0.875rem' }}>
-            Modern digital restaurant management
-          </p>
+          />
         </div>
 
-        {/* Card */}
-        <div className="card" style={{ padding: 'var(--space-xl)', boxShadow: 'var(--shadow-md)' }}>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-            <div className="form-group">
-              <label className="form-label form-label-required" htmlFor="email">
-                Email Address
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Mail
-                  size={16}
-                  style={{
-                    position: 'absolute',
-                    left: 12,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: 'var(--text-muted)',
-                    pointerEvents: 'none',
-                  }}
-                />
-                <input
-                  id="email"
-                  type="email"
-                  className="form-input"
-                  placeholder="name@restaurant.com"
-                  value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                  autoComplete="email"
-                  disabled={isPending}
-                  style={{
-                    paddingLeft: 38,
-                    ...(errors.email ? { borderColor: 'var(--danger)' } : {}),
-                  }}
-                />
-              </div>
-              {errors.email && <span className="form-error">{errors.email}</span>}
+        {/* Top Branding */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <TandooriStopLogo variant="badge" size="md" />
+        </div>
+
+        {/* Hero Central Content */}
+        <div style={{ position: 'relative', zIndex: 2, maxWidth: 520, margin: 'auto 0' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '6px 14px',
+              borderRadius: '9999px',
+              background: 'rgba(250, 229, 93, 0.14)',
+              border: '1px solid rgba(250, 229, 93, 0.3)',
+              color: '#FAE55D',
+              fontSize: '0.8125rem',
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              marginBottom: 20,
+              textTransform: 'uppercase',
+            }}
+          >
+            <Flame size={15} style={{ color: '#F11868' }} />
+            <span>The Art of Charcoal & Clay</span>
+          </div>
+
+          <h1
+            style={{
+              fontSize: '2.5rem',
+              fontWeight: 800,
+              lineHeight: 1.15,
+              color: '#FFFFFF',
+              letterSpacing: '-0.03em',
+              marginBottom: 16,
+              textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+            }}
+          >
+            Mastering Tandoor Operations with{' '}
+            <span
+              style={{
+                color: '#FAE55D',
+                background: 'linear-gradient(90deg, #FAE55D 0%, #FF6B9D 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              Precision & Speed
+            </span>
+          </h1>
+
+          <p
+            style={{
+              fontSize: '1rem',
+              lineHeight: 1.6,
+              color: '#E5E7EB',
+              marginBottom: 32,
+              fontWeight: 400,
+            }}
+          >
+            A tailored digital command center built exclusively for Tandoori Stop. Effortlessly track live kitchen orders, control recipe inventory, schedule staff, and monitor real-time dining floor revenues.
+          </p>
+
+          {/* Value Highlights */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '10px 14px',
+                borderRadius: 'var(--radius-md)',
+                background: 'rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <ChefHat size={18} style={{ color: '#FAE55D', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.8125rem', fontWeight: 600 }}>Live Kitchen POS & Tables</span>
             </div>
 
-            <div className="form-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <label className="form-label form-label-required" htmlFor="password" style={{ margin: 0 }}>
-                  Password
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '10px 14px',
+                borderRadius: 'var(--radius-md)',
+                background: 'rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <BarChart3 size={18} style={{ color: '#F11868', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.8125rem', fontWeight: 600 }}>Real-Time Financial Reports</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Tagline */}
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderTop: '1px solid rgba(255, 255, 255, 0.12)',
+            paddingTop: 20,
+            fontSize: '0.8125rem',
+            color: '#9CA3AF',
+          }}
+        >
+          <span>Tandoori Stop Restaurant Management System</span>
+          <span style={{ color: '#FAE55D', fontWeight: 600 }}>Authentic Indian & Pakistani Grill</span>
+        </div>
+      </div>
+
+      {/* ─── RIGHT LOGIN FORM CARD ──────────────────────────────── */}
+      <div
+        className="login-form-panel"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '48px 32px',
+          position: 'relative',
+        }}
+      >
+        <div style={{ width: '100%', maxWidth: 440 }}>
+          {/* Header */}
+          <div style={{ marginBottom: 'var(--space-lg)', textAlign: 'left' }}>
+            <div style={{ marginBottom: 14 }}>
+              <TandooriStopLogo variant="full" size="md" />
+            </div>
+            <h2
+              style={{
+                fontSize: '1.5rem',
+                fontWeight: 800,
+                color: 'var(--text-primary)',
+                letterSpacing: '-0.02em',
+              }}
+            >
+              Sign In to Your Portal
+            </h2>
+            <p style={{ color: 'var(--text-muted)', marginTop: 4, fontSize: '0.875rem' }}>
+              Enter your credentials to access the management workspace
+            </p>
+          </div>
+
+          {/* Form Card */}
+          <div
+            className="card"
+            style={{
+              padding: 'var(--space-xl)',
+              boxShadow: 'var(--shadow-lg)',
+              border: '1px solid var(--border)',
+            }}
+          >
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+              <div className="form-group">
+                <label className="form-label form-label-required" htmlFor="email">
+                  Email Address
                 </label>
+                <div style={{ position: 'relative' }}>
+                  <Mail
+                    size={16}
+                    style={{
+                      position: 'absolute',
+                      left: 12,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text-muted)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                  <input
+                    id="email"
+                    type="email"
+                    className="form-input"
+                    placeholder="admin@restaurant.com"
+                    value={form.email}
+                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                    autoComplete="email"
+                    disabled={isPending}
+                    style={{
+                      paddingLeft: 38,
+                      ...(errors.email ? { borderColor: 'var(--danger)' } : {}),
+                    }}
+                  />
+                </div>
+                {errors.email && <span className="form-error">{errors.email}</span>}
+              </div>
+
+              <div className="form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <label className="form-label form-label-required" htmlFor="password" style={{ margin: 0 }}>
+                    Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-muted)',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    <span>{showPassword ? 'Hide' : 'Show'}</span>
+                  </button>
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <Lock
+                    size={16}
+                    style={{
+                      position: 'absolute',
+                      left: 12,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text-muted)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    className="form-input"
+                    placeholder="••••••••"
+                    value={form.password}
+                    onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                    autoComplete="current-password"
+                    disabled={isPending}
+                    style={{
+                      paddingLeft: 38,
+                      paddingRight: 38,
+                      ...(errors.password ? { borderColor: 'var(--danger)' } : {}),
+                    }}
+                  />
+                </div>
+                {errors.password && <span className="form-error">{errors.password}</span>}
+              </div>
+
+              <button
+                id="login-submit"
+                type="submit"
+                className="btn btn-primary btn-full btn-lg"
+                disabled={isPending}
+                style={{ marginTop: 'var(--space-xs)' }}
+              >
+                {isPending ? (
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    <span
+                      style={{
+                        width: 16,
+                        height: 16,
+                        border: '2px solid rgba(255,255,255,0.3)',
+                        borderTopColor: '#fff',
+                        borderRadius: '50%',
+                        animation: 'spin 0.6s linear infinite',
+                        display: 'inline-block',
+                      }}
+                    />
+                    Signing in…
+                  </span>
+                ) : (
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    <span>Sign In</span>
+                    <ArrowRight size={16} />
+                  </span>
+                )}
+              </button>
+            </form>
+
+            {/* ─── Hardcoded Test Accounts Section ──────────────────────── */}
+            <div
+              style={{
+                marginTop: 'var(--space-lg)',
+                paddingTop: 'var(--space-md)',
+                borderTop: '1px solid var(--border)',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 'var(--space-sm)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Sparkles size={15} style={{ color: 'var(--brand-red)' }} />
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    Test Accounts (One-Click Demo)
+                  </span>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowSqlModal(true)}
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: 'var(--text-muted)',
+                    color: 'var(--brand-red)',
                     fontSize: '0.75rem',
+                    fontWeight: 600,
                     cursor: 'pointer',
                     padding: 0,
                     display: 'flex',
@@ -275,205 +544,110 @@ export default function LoginPage() {
                     gap: 4,
                   }}
                 >
-                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                  <span>{showPassword ? 'Hide' : 'Show'}</span>
+                  <Code2 size={13} />
+                  <span>Seed SQL</span>
                 </button>
               </div>
-              <div style={{ position: 'relative' }}>
-                <Lock
-                  size={16}
-                  style={{
-                    position: 'absolute',
-                    left: 12,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: 'var(--text-muted)',
-                    pointerEvents: 'none',
-                  }}
-                />
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  className="form-input"
-                  placeholder="••••••••"
-                  value={form.password}
-                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                  autoComplete="current-password"
-                  disabled={isPending}
-                  style={{
-                    paddingLeft: 38,
-                    paddingRight: 38,
-                    ...(errors.password ? { borderColor: 'var(--danger)' } : {}),
-                  }}
-                />
-              </div>
-              {errors.password && <span className="form-error">{errors.password}</span>}
-            </div>
 
-            <button
-              id="login-submit"
-              type="submit"
-              className="btn btn-primary btn-full btn-lg"
-              disabled={isPending}
-              style={{ marginTop: 'var(--space-xs)' }}
-            >
-              {isPending ? (
-                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                  <span
-                    style={{
-                      width: 16,
-                      height: 16,
-                      border: '2px solid rgba(255,255,255,0.3)',
-                      borderTopColor: '#fff',
-                      borderRadius: '50%',
-                      animation: 'spin 0.6s linear infinite',
-                      display: 'inline-block',
-                    }}
-                  />
-                  Signing in…
-                </span>
-              ) : (
-                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                  <span>Sign In</span>
-                  <ArrowRight size={16} />
-                </span>
-              )}
-            </button>
-          </form>
-
-          {/* ─── Hardcoded Test Accounts Section ──────────────────────── */}
-          <div
-            style={{
-              marginTop: 'var(--space-lg)',
-              paddingTop: 'var(--space-md)',
-              borderTop: '1px solid var(--border)',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 'var(--space-sm)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Sparkles size={15} style={{ color: 'var(--primary)' }} />
-                <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  Test Credentials (Hardcoded)
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowSqlModal(true)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--primary-light)',
-                  fontSize: '0.75rem',
-                  cursor: 'pointer',
-                  padding: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  textDecoration: 'underline',
-                }}
-              >
-                <Code2 size={13} />
-                <span>Seed SQL</span>
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-              {TEST_ACCOUNTS.map((account) => (
-                <div
-                  key={account.id}
-                  style={{
-                    background: 'var(--surface-hover)',
-                    borderRadius: 'var(--radius-md)',
-                    padding: 'var(--space-sm) var(--space-md)',
-                    border: '1px solid var(--border)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 8,
-                  }}
-                >
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                      <span
-                        style={{
-                          fontSize: '0.6875rem',
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          padding: '1px 6px',
-                          borderRadius: 'var(--radius-sm)',
-                          background: `${account.badgeColor}22`,
-                          color: account.badgeColor,
-                        }}
-                      >
-                        {account.label}
-                      </span>
-                      <code style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 600 }}>
-                        {account.email}
-                      </code>
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      Password: <code style={{ color: 'var(--primary-light)', fontWeight: 600 }}>{account.password}</code>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                    <button
-                      type="button"
-                      onClick={() => handleFillTestAccount(account, false)}
-                      disabled={isPending}
-                      className="btn btn-secondary btn-sm"
-                      title="Fill credentials into input fields"
-                      style={{ fontSize: '0.75rem', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4 }}
-                    >
-                      <KeyRound size={12} />
-                      <span>Fill</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleFillTestAccount(account, true)}
-                      disabled={isPending}
-                      className="btn btn-primary btn-sm"
-                      title="Fill and sign in immediately"
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                {TEST_ACCOUNTS.map((account) => {
+                  const isAdmin = account.role === 'admin'
+                  return (
+                    <div
+                      key={account.id}
                       style={{
-                        fontSize: '0.75rem',
-                        padding: '4px 10px',
+                        background: 'var(--surface-hover)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '10px 14px',
+                        border: '1px solid var(--border)',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 4,
-                        background: account.role === 'admin' ? undefined : 'hsl(215, 88%, 48%)',
+                        justifyContent: 'space-between',
+                        gap: 8,
+                        transition: 'border-color var(--transition-fast)',
                       }}
                     >
-                      <Zap size={12} />
-                      <span>Login</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                          <span
+                            style={{
+                              fontSize: '0.6875rem',
+                              fontWeight: 800,
+                              textTransform: 'uppercase',
+                              padding: '2px 7px',
+                              borderRadius: '4px',
+                              background: isAdmin ? 'rgba(241, 24, 104, 0.16)' : 'rgba(56, 189, 248, 0.16)',
+                              color: isAdmin ? 'var(--brand-red)' : '#38BDF8',
+                              border: `1px solid ${isAdmin ? 'rgba(241, 24, 104, 0.3)' : 'rgba(56, 189, 248, 0.3)'}`,
+                            }}
+                          >
+                            {account.label}
+                          </span>
+                          <code style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 600 }}>
+                            {account.email}
+                          </code>
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          Password: <code style={{ color: 'var(--brand-red)', fontWeight: 600 }}>{account.password}</code>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                        <button
+                          type="button"
+                          onClick={() => handleFillTestAccount(account, false)}
+                          disabled={isPending}
+                          className="btn btn-secondary btn-sm"
+                          title="Fill credentials into input fields"
+                          style={{ fontSize: '0.75rem', padding: '5px 8px', display: 'flex', alignItems: 'center', gap: 4 }}
+                        >
+                          <KeyRound size={12} />
+                          <span>Fill</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleFillTestAccount(account, true)}
+                          disabled={isPending}
+                          className="btn btn-sm"
+                          title="Fill and sign in immediately"
+                          style={{
+                            fontSize: '0.75rem',
+                            padding: '5px 10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            background: isAdmin ? 'var(--brand-red)' : '#0284C7',
+                            color: '#FFFFFF',
+                            border: 'none',
+                            fontWeight: 700,
+                          }}
+                        >
+                          <Zap size={12} />
+                          <span>Login</span>
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.4 }}>
+                Click <strong>Fill</strong> to populate fields or <strong>Login</strong> to authenticate instantly.
+              </p>
             </div>
-
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.4 }}>
-              Click <strong>Fill</strong> to populate fields or <strong>Login</strong> to authenticate instantly.
-            </p>
           </div>
-        </div>
 
-        <p
-          style={{
-            textAlign: 'center',
-            marginTop: 'var(--space-lg)',
-            fontSize: '0.8125rem',
-            color: 'var(--text-muted)',
-          }}
-        >
-          Restaurant Management System — SPM Project
-        </p>
+          <p
+            style={{
+              textAlign: 'center',
+              marginTop: 'var(--space-lg)',
+              fontSize: '0.8125rem',
+              color: 'var(--text-muted)',
+            }}
+          >
+            Tandoori Stop © {new Date().getFullYear()} — Restaurant Management System
+          </p>
+        </div>
       </div>
 
       {/* SQL Seed Modal */}
@@ -484,8 +658,8 @@ export default function LoginPage() {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.65)',
-            backdropFilter: 'blur(6px)',
+            background: 'rgba(0,0,0,0.75)',
+            backdropFilter: 'blur(8px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -514,7 +688,7 @@ export default function LoginPage() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Code2 size={20} style={{ color: 'var(--primary)' }} />
+                <Code2 size={20} style={{ color: 'var(--brand-red)' }} />
                 <h3 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                   Supabase Seed & Permissions SQL
                 </h3>
@@ -589,6 +763,17 @@ export default function LoginPage() {
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 900px) {
+          .login-split-container {
+            grid-template-columns: 1fr !important;
+          }
+          .login-hero-panel {
+            display: none !important;
+          }
+          .login-form-panel {
+            padding: 32px 16px !important;
+          }
+        }
       `}</style>
     </div>
   )

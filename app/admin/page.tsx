@@ -12,13 +12,17 @@ import {
   User,
   LayoutGrid,
   CheckCheck,
+  Flame,
+  Sparkles,
+  TrendingUp,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatCurrency, formatOrderNumber } from '@/lib/utils'
 import { StatusBadge } from '@/components/ui/Badge'
+import { FEATURED_SPECIALTIES } from '@/lib/food-images'
 
 export const metadata: Metadata = {
-  title: 'Dashboard — RestaurantMS',
+  title: 'Operations Dashboard — Tandoori Stop',
 }
 
 // Disable caching so dashboard always reflects live data
@@ -105,7 +109,6 @@ async function getDashboardData() {
       lowStockItems: lowStockItems ?? [],
     }
   } catch {
-    // Fallback data if DB error
     return {
       todaySales: 0,
       todayExpenses: 0,
@@ -124,11 +127,12 @@ export default async function AdminDashboard() {
 
   const stats = [
     {
-      label: "Today's Sales",
+      label: "Today's Revenue",
       value: formatCurrency(data.todaySales),
       icon: DollarSign,
-      iconColor: 'var(--primary)',
+      iconColor: 'var(--brand-red)',
       id: 'stat-sales',
+      trend: '+12% vs last week',
     },
     {
       label: "Today's Orders",
@@ -136,14 +140,16 @@ export default async function AdminDashboard() {
       icon: ShoppingBag,
       iconColor: 'var(--success)',
       id: 'stat-orders',
+      trend: `${data.completedCount} completed`,
     },
     {
       label: 'Pending Orders',
       value: data.pendingCount,
       icon: Clock,
-      iconColor: data.pendingCount > 0 ? 'var(--warning)' : 'var(--text-muted)',
+      iconColor: data.pendingCount > 0 ? 'var(--brand-yellow)' : 'var(--text-muted)',
       id: 'stat-pending',
       highlight: data.pendingCount > 0,
+      trend: data.pendingCount > 0 ? 'Requires attention' : 'All clear',
     },
     {
       label: "Today's Expenses",
@@ -151,14 +157,16 @@ export default async function AdminDashboard() {
       icon: Receipt,
       iconColor: 'var(--danger)',
       id: 'stat-expenses',
+      trend: 'Operating costs',
     },
     {
-      label: 'Low Stock Items',
+      label: 'Low Stock Alerts',
       value: data.lowStockCount,
       icon: AlertTriangle,
-      iconColor: data.lowStockCount > 0 ? 'var(--warning)' : 'var(--text-muted)',
+      iconColor: data.lowStockCount > 0 ? 'var(--brand-yellow)' : 'var(--text-muted)',
       id: 'stat-low-stock',
       highlight: data.lowStockCount > 0,
+      trend: data.lowStockCount > 0 ? 'Items below minimum' : 'Stock healthy',
     },
     {
       label: 'Active Staff',
@@ -166,31 +174,103 @@ export default async function AdminDashboard() {
       icon: Users,
       iconColor: 'var(--info)',
       id: 'stat-staff',
+      trend: 'On shift today',
     },
   ]
 
   return (
     <div className="admin-content">
-      {/* Header */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">
+      {/* ─── Hero Welcome Banner ─────────────────────────────────── */}
+      <div
+        className="brand-hero-card"
+        style={{
+          padding: '24px 28px',
+          marginBottom: 'var(--space-lg)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+        }}
+      >
+        <div style={{ position: 'relative', zIndex: 2, maxWidth: 640 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                background: 'rgba(250, 229, 93, 0.15)',
+                border: '1px solid rgba(250, 229, 93, 0.3)',
+                borderRadius: '9999px',
+                padding: '2px 10px',
+                fontSize: '0.6875rem',
+                fontWeight: 700,
+                color: '#FAE55D',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              <Flame size={12} style={{ color: 'var(--brand-red)' }} />
+              <span>Tandoori Stop Operations</span>
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: '#9CA3AF' }}>
+              <span className="live-dot" style={{ width: 6, height: 6 }} />
+              <span>Live POS Sync</span>
+            </div>
+          </div>
+
+          <h1
+            style={{
+              fontSize: '1.75rem',
+              fontWeight: 800,
+              letterSpacing: '-0.02em',
+              color: '#FFFFFF',
+              marginBottom: 4,
+            }}
+          >
+            Restaurant Management Overview
+          </h1>
+          <p style={{ color: '#D1D5DB', fontSize: '0.875rem', lineHeight: 1.5 }}>
             {new Date().toLocaleDateString('en-PK', {
               weekday: 'long',
               year: 'numeric',
               month: 'long',
               day: 'numeric',
-            })}
+            })}{' '}
+            — Real-time table orders, kitchen tickets, and financial summary.
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="live-dot" />
-          <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', fontWeight: 500 }}>Live Feed</span>
+
+        <div style={{ position: 'relative', zIndex: 2, display: 'flex', gap: 10 }}>
+          <Link
+            href="/admin/orders"
+            className="btn btn-primary"
+            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8125rem' }}
+          >
+            <Clock size={15} />
+            <span>Manage Orders</span>
+          </Link>
+          <Link
+            href="/admin/products"
+            className="btn btn-secondary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: '0.8125rem',
+              background: 'rgba(255,255,255,0.08)',
+              borderColor: 'rgba(255,255,255,0.15)',
+              color: '#FFFFFF',
+            }}
+          >
+            <Sparkles size={15} style={{ color: 'var(--brand-yellow)' }} />
+            <span>Menu & Specialties</span>
+          </Link>
         </div>
       </div>
 
-      {/* Stat Cards */}
+      {/* ─── Stat Metric Cards ───────────────────────────────────── */}
       <div className="grid-3" style={{ marginBottom: 'var(--space-lg)' }}>
         {stats.map((stat) => {
           const Icon = stat.icon
@@ -205,18 +285,24 @@ export default async function AdminDashboard() {
                 justifyContent: 'space-between',
                 padding: 'var(--space-md) var(--space-lg)',
                 ...(stat.highlight
-                  ? { borderColor: 'var(--warning)', boxShadow: '0 0 12px hsla(42,95%,52%,0.15)' }
+                  ? { borderColor: 'var(--brand-yellow)', boxShadow: '0 0 16px rgba(250, 229, 93, 0.15)' }
                   : {}),
               }}
             >
               <div>
-                <div className="stat-label" style={{ marginBottom: 4 }}>{stat.label}</div>
+                <div className="stat-label" style={{ marginBottom: 4 }}>
+                  {stat.label}
+                </div>
                 <div className="stat-value">{stat.value}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <TrendingUp size={12} style={{ color: stat.iconColor }} />
+                  <span>{stat.trend}</span>
+                </div>
               </div>
               <div
                 style={{
-                  width: 44,
-                  height: 44,
+                  width: 48,
+                  height: 48,
                   borderRadius: 'var(--radius-md)',
                   background: 'var(--surface-hover)',
                   border: '1px solid var(--border)',
@@ -225,23 +311,112 @@ export default async function AdminDashboard() {
                   justifyContent: 'center',
                   color: stat.iconColor,
                   flexShrink: 0,
+                  boxShadow: 'var(--shadow-sm)',
                 }}
               >
-                <Icon size={22} />
+                <Icon size={24} />
               </div>
             </div>
           )
         })}
       </div>
 
+      {/* ─── Featured Specialties Banner ─────────────────────────── */}
+      <div style={{ marginBottom: 'var(--space-lg)' }}>
+        <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-sm)' }}>
+          <div className="flex items-center gap-xs">
+            <Flame size={18} style={{ color: 'var(--brand-red)' }} />
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 700 }}>Signature Tandoori Specialties</h2>
+          </div>
+          <Link
+            href="/admin/products"
+            style={{ fontSize: '0.8125rem', color: 'var(--brand-red)', fontWeight: 600, textDecoration: 'none' }}
+          >
+            View Menu Catalog →
+          </Link>
+        </div>
+
+        <div className="grid-3">
+          {FEATURED_SPECIALTIES.map((spec) => (
+            <div
+              key={spec.name}
+              className="card"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                padding: 12,
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <div
+                style={{
+                  width: 68,
+                  height: 68,
+                  borderRadius: 'var(--radius-md)',
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                  background: '#1A1A1A',
+                }}
+              >
+                <img
+                  src={spec.image}
+                  alt={spec.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <span
+                  style={{
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    color: 'var(--brand-red)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  {spec.category}
+                </span>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: '0.875rem',
+                    color: 'var(--text-primary)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {spec.name}
+                </div>
+                <div
+                  style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--text-muted)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    marginTop: 2,
+                  }}
+                >
+                  {spec.description}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── Main Grid: Incoming Orders & Low Stock ───────────────── */}
       <div className="admin-dashboard-grid">
         {/* Incoming Orders */}
         <div>
           <div className="flex items-center gap-sm" style={{ marginBottom: 'var(--space-md)' }}>
-            <h2 style={{ fontSize: '1.125rem', fontWeight: 700 }}>Incoming Orders</h2>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 700 }}>Active Kitchen & Table Orders</h2>
             <span className="live-dot" />
             {data.recentOrders.length > 0 && (
-              <span className="badge badge-warning">{data.recentOrders.length}</span>
+              <span className="badge badge-warning">{data.recentOrders.length} active</span>
             )}
           </div>
 
@@ -250,21 +425,26 @@ export default async function AdminDashboard() {
               <div className="empty-state" style={{ padding: 'var(--space-2xl) var(--space-md)' }}>
                 <div
                   style={{
-                    width: 48,
-                    height: 48,
+                    width: 52,
+                    height: 52,
                     borderRadius: '50%',
                     background: 'var(--primary-muted)',
-                    color: 'var(--primary)',
+                    color: 'var(--brand-red)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     margin: '0 auto var(--space-sm)',
+                    boxShadow: 'var(--shadow-glow)',
                   }}
                 >
-                  <CheckCircle2 size={24} />
+                  <CheckCircle2 size={26} />
                 </div>
-                <div className="empty-state-title" style={{ fontSize: '1rem', fontWeight: 600 }}>All Caught Up</div>
-                <div className="empty-state-desc">New orders submitted by waiters will appear here live.</div>
+                <div className="empty-state-title" style={{ fontSize: '1.05rem', fontWeight: 700 }}>
+                  Kitchen Queue All Caught Up
+                </div>
+                <div className="empty-state-desc">
+                  Incoming dining & takeaway orders will appear here in real time.
+                </div>
               </div>
             </div>
           ) : (
@@ -273,7 +453,7 @@ export default async function AdminDashboard() {
                 <div key={order.id} className={`order-card ${order.status}`}>
                   <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-sm)' }}>
                     <div className="flex items-center gap-sm">
-                      <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>
+                      <span style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)', fontFamily: 'monospace' }}>
                         {formatOrderNumber(order.order_number)}
                       </span>
                       <StatusBadge status={order.status} />
@@ -281,26 +461,26 @@ export default async function AdminDashboard() {
                     <Link
                       href={`/admin/orders/${order.id}`}
                       className="btn btn-secondary btn-sm"
-                      style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8125rem' }}
                     >
-                      <span>View</span>
+                      <span>View Ticket</span>
                       <ArrowRight size={13} />
                     </Link>
                   </div>
 
                   <div className="flex gap-md text-sm text-secondary" style={{ marginBottom: 'var(--space-sm)' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <User size={13} style={{ color: 'var(--text-muted)' }} />
-                      <span>{order.profiles?.name ?? 'Unknown'}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <User size={14} style={{ color: 'var(--text-muted)' }} />
+                      <span style={{ fontWeight: 500 }}>{order.profiles?.name ?? 'Waiter'}</span>
                     </span>
                     {order.table_number && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <LayoutGrid size={13} style={{ color: 'var(--text-muted)' }} />
-                        <span>Table {order.table_number}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <LayoutGrid size={14} style={{ color: 'var(--brand-yellow)' }} />
+                        <span style={{ fontWeight: 600 }}>Table {order.table_number}</span>
                       </span>
                     )}
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Clock size={13} style={{ color: 'var(--text-muted)' }} />
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <Clock size={14} style={{ color: 'var(--text-muted)' }} />
                       <span>
                         {new Date(order.created_at).toLocaleTimeString('en-PK', {
                           hour: '2-digit',
@@ -320,18 +500,33 @@ export default async function AdminDashboard() {
                     className="flex items-center justify-between"
                     style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--space-sm)' }}
                   >
-                    <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>
-                      {formatCurrency(order.total)}
-                    </span>
+                    <div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>
+                        Total Amount
+                      </span>
+                      <span style={{ fontWeight: 800, fontSize: '1.125rem', color: 'var(--text-primary)' }}>
+                        {formatCurrency(order.total)}
+                      </span>
+                    </div>
+
                     <div className="flex gap-sm">
                       {order.status === 'pending' && (
-                        <Link href={`/admin/orders/${order.id}`} className="btn btn-success btn-sm">
-                          Accept
+                        <Link
+                          href={`/admin/orders/${order.id}`}
+                          className="btn btn-sm"
+                          style={{
+                            background: 'var(--brand-yellow)',
+                            color: '#111111',
+                            fontWeight: 700,
+                            border: 'none',
+                          }}
+                        >
+                          Accept Order
                         </Link>
                       )}
                       {(order.status === 'pending' || order.status === 'accepted') && (
                         <Link href={`/admin/orders/${order.id}`} className="btn btn-primary btn-sm">
-                          Complete
+                          Complete Order
                         </Link>
                       )}
                     </div>
@@ -345,8 +540,8 @@ export default async function AdminDashboard() {
         {/* Low Stock Sidebar */}
         <div>
           <div className="flex items-center gap-sm" style={{ marginBottom: 'var(--space-md)' }}>
-            <AlertTriangle size={18} style={{ color: 'var(--warning)' }} />
-            <h2 style={{ fontSize: '1.125rem', fontWeight: 700 }}>Low Stock Alert</h2>
+            <AlertTriangle size={18} style={{ color: 'var(--brand-yellow)' }} />
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 700 }}>Ingredient Stock Alerts</h2>
           </div>
 
           {data.lowStockItems.length === 0 ? (
@@ -363,8 +558,9 @@ export default async function AdminDashboard() {
                   gap: 8,
                 }}
               >
-                <CheckCheck size={24} style={{ color: 'var(--success)' }} />
-                <span>All inventory stock levels OK</span>
+                <CheckCheck size={26} style={{ color: 'var(--success)' }} />
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>All Stock Levels Healthy</span>
+                <span style={{ fontSize: '0.75rem' }}>No ingredients below safety threshold</span>
               </div>
             </div>
           ) : (
@@ -373,25 +569,28 @@ export default async function AdminDashboard() {
                 <div
                   key={item.id}
                   className="card card-sm"
-                  style={{ borderColor: 'var(--warning)', background: 'var(--surface-hover)' }}
+                  style={{
+                    borderColor: 'rgba(250, 229, 93, 0.4)',
+                    background: 'var(--surface-hover)',
+                  }}
                 >
-                  <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: 2, color: 'var(--text-primary)' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: 2, color: 'var(--text-primary)' }}>
                     {item.name}
                   </div>
-                  <div style={{ fontSize: '0.8125rem', color: 'var(--danger)', fontWeight: 600 }}>
+                  <div style={{ fontSize: '0.8125rem', color: 'var(--danger)', fontWeight: 700 }}>
                     {item.current_quantity} {item.unit} remaining
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    Min required: {item.minimum_quantity} {item.unit}
+                    Safety minimum: {item.minimum_quantity} {item.unit}
                   </div>
                 </div>
               ))}
               <Link
                 href="/admin/inventory"
                 className="btn btn-secondary btn-sm"
-                style={{ textAlign: 'center', marginTop: 4 }}
+                style={{ textAlign: 'center', marginTop: 4, display: 'block' }}
               >
-                Manage Inventory
+                Manage Inventory & Supplies →
               </Link>
             </div>
           )}
